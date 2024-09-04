@@ -1,0 +1,70 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id("org.jetbrains.kotlin.plugin.compose")
+}
+
+android {
+    namespace 'co.javos.watchfly'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "co.javos.watchfly"
+        minSdk 33
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+        vectorDrawables {
+            useSupportLibrary true
+        }
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    buildFeatures {
+        compose true
+        viewBinding true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion '1.5.1'
+    }
+    packaging {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+        }
+    }
+}
+
+dependencies {
+    def composeBom = platform('androidx.compose:compose-bom:2024.08.00')
+    implementation composeBom
+    androidTestImplementation composeBom
+
+    implementation 'com.google.android.gms:play-services-wearable:18.2.0'
+    implementation 'androidx.compose.ui:ui-test-junit4'
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.wear.compose:compose-foundation:1.3.1'
+    implementation 'androidx.wear.compose:compose-material3:1.0.0-alpha23'
+    implementation 'androidx.wear.compose:compose-material'
+    implementation "androidx.compose.material3:material3"
+    implementation "androidx.compose.material:material-icons-extended"
+    implementation 'androidx.activity:activity-compose:1.9.1'
+    implementation 'androidx.core:core-splashscreen:1.0.1'
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
+}

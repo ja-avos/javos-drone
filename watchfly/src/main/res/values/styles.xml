@@ -1,0 +1,9 @@
+<resources>
+
+    <style name="MainActivityTheme.Starting" parent="Theme.SplashScreen">
+        <item name="splashScreenIconSize">@dimen/splashscreen_icon_size</item>
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/drone_control_logo_white</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.DeviceDefault</item>
+    </style>
+</resources>

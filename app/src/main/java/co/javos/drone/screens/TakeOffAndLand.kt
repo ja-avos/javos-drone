@@ -119,6 +119,7 @@ fun takeOffLandButton() {
     }
 
     fun land() {
+        fController?.state?.isFlying
         fController?.startLanding(CompletionCallback<DJIError> { error ->
             Log.d(
                 "DRONE FLIGHT",

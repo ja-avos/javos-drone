@@ -1,11 +1,12 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 android {
     namespace 'co.javos.drone'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "co.javos.drone"
@@ -40,48 +41,44 @@ android {
         kotlinCompilerExtensionVersion '1.1.1'
     }
     packagingOptions {
-        doNotStrip "*/*/libdjivideo.so"
-        doNotStrip "*/*/libSDKRelativeJNI.so"
-        doNotStrip "*/*/libFlyForbid.so"
-        doNotStrip "*/*/libduml_vision_bokeh.so"
-        doNotStrip "*/*/libyuv2.so"
-        doNotStrip "*/*/libGroudStation.so"
-        doNotStrip "*/*/libFRCorkscrew.so"
-        doNotStrip "*/*/libUpgradeVerify.so"
-        doNotStrip "*/*/libFR.so"
-        doNotStrip "*/*/libDJIFlySafeCore.so"
-        doNotStrip "*/*/libdjifs_jni.so"
-        doNotStrip "*/*/libsfjni.so"
-        exclude 'META-INF/rxjava.properties'
         resources {
-            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}', 'META-INF/rxjava.properties']
+        }
+        jniLibs {
+            keepDebugSymbols += ['*/*/libdjivideo.so', '*/*/libSDKRelativeJNI.so', '*/*/libFlyForbid.so', '*/*/libduml_vision_bokeh.so', '*/*/libyuv2.so', '*/*/libGroudStation.so', '*/*/libFRCorkscrew.so', '*/*/libUpgradeVerify.so', '*/*/libFR.so', '*/*/libDJIFlySafeCore.so', '*/*/libdjifs_jni.so', '*/*/libsfjni.so']
         }
     }
 }
 
 dependencies {
 
+    def composeBom = platform('androidx.compose:compose-bom:2024.08.00')
+    implementation composeBom
+    androidTestImplementation composeBom
+
+    implementation 'androidx.wear.compose:compose-material:1.3.1'
+    implementation 'androidx.wear.compose:compose-foundation:1.3.1'
+    implementation 'androidx.core:core-splashscreen:1.0.1'
     def nav_version = "2.5.3"
 
     def multidex_version = "2.0.1"
     implementation "androidx.multidex:multidex:$multidex_version"
 
-    implementation 'androidx.core:core-ktx:1.9.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
-    implementation 'androidx.activity:activity-compose:1.6.1'
-    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
+    implementation 'androidx.activity:activity-compose:1.9.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation "androidx.compose.ui:ui:$compose_version"
-    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-    implementation "androidx.compose.material3:material3:1.1.0-alpha01"
-    implementation "androidx.compose.material3:material3-window-size-class:1.1.0-alpha01"
-    implementation("androidx.navigation:navigation-compose:$nav_version")
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.navigation:navigation-compose:$nav_version"
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+    implementation "androidx.compose.material3:material3:1.2.1"
+    implementation "androidx.compose.material3:material3-window-size-class:1.2.1"
+    implementation("androidx.navigation:navigation-compose")
+
+    androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
+    debugImplementation 'androidx.compose.ui:ui-test-manifest'
 
     implementation('com.dji:dji-sdk:4.16.3', {
         exclude module: 'library-anti-distortion'

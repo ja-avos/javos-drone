@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name">JAVOS Drone</string>
-    <string name="title_activity_watch_flight">Watch_Flight</string>
+    <string name="app_name">Watch Fly</string>
     <!--
     This string is used for square devices and overridden by hello_world in
     values-round/strings.xml for round devices.
     -->
     <string name="hello_world">From the Square world,\nHello, %1$s!</string>
-    <string name="title_activity_watch_fly">Watch_FLy</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>
