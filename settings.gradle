@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "JAVOS Drone"
 include ':app'
 include ':watchfly'
+include ':watchflyphoneapp'

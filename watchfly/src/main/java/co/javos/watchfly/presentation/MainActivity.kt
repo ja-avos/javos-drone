@@ -1112,5 +1112,5 @@ fun ChangeAltitudeScreen(cursorOffset: Offset = Offset.Zero) {
 @Preview(device = Devices.WEAR_OS_LARGE_ROUND, showSystemUi = true)
 @Composable
 fun DefaultPreview() {
-    WearApp("Preview Android", null)
+    WearApp(null)
 }
