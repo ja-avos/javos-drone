@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Battery5Bar
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.SatelliteAlt
@@ -35,7 +36,6 @@ import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material.icons.filled.WatchOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -59,11 +59,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextIndent
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -71,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavController
 import co.javos.watchflyphoneapp.widgets.ChangeScreenWidget
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -83,9 +86,21 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
+enum class DroneStatus {
+    NO_REMOTE,
+    NO_DRONE,
+
+    //    MOTORS_OFF,
+//    MOTORS_ON,
+    FLYING,
+//    LANDED,
+//    ERROR
+}
+
+
 @Preview(device = Devices.TABLET, uiMode = 0)
 @Composable
-fun MainScreen() {
+fun MainScreen(navController: NavController? = null) {
     val dronePhotos = listOf(
         R.drawable.drone_bacata,
         R.drawable.drone_solar,
@@ -93,7 +108,7 @@ fun MainScreen() {
         R.drawable.drone_playa
     )
     val showMap = remember { mutableStateOf(true) }
-    val droneConnected = remember { mutableStateOf(true) }
+    val droneStatus = remember { mutableStateOf(DroneStatus.NO_REMOTE) }
     val idDronePhoto = remember { mutableIntStateOf(dronePhotos.first()) }
     val showAlert = remember { mutableStateOf(false) }
 
@@ -107,7 +122,7 @@ fun MainScreen() {
             )
 
         if (showMap.value) MapScreen() else CameraScreen(
-            droneConnected.value,
+            droneStatus.value,
             idDronePhoto.intValue
         )
         Row(
@@ -125,15 +140,15 @@ fun MainScreen() {
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 DroneStatusWidget(
-                    connected = droneConnected.value,
+                    status = droneStatus.value,
                     onClick = {
                         idDronePhoto.intValue =
                             dronePhotos[(dronePhotos.indexOf(idDronePhoto.intValue) + 1) % dronePhotos.size]
                     })
-                WatchButton()
+                WatchButton(navController)
                 ChangeScreenWidget(onTap = { showMap.value = !showMap.value }) {
                     if (!showMap.value) MapScreen() else CameraScreen(
-                        droneConnected.value,
+                        droneStatus.value,
                         idDronePhoto.intValue
                     )
                 }
@@ -147,7 +162,8 @@ fun MainScreen() {
 
             ) {
                 VirtualSticksWidget(onClick = {
-                    droneConnected.value = !droneConnected.value
+                    droneStatus.value =
+                        DroneStatus.values()[(droneStatus.value.ordinal + 1) % DroneStatus.values().size]
                 })
             }
             Column(
@@ -158,7 +174,7 @@ fun MainScreen() {
                 horizontalAlignment = Alignment.End
             ) {
                 ActionsWidget(
-                    enabled = droneConnected,
+                    status = droneStatus,
                     showMapActions = showMap.value,
                     onTakePhoto = {
                         showAlert.value = true
@@ -204,18 +220,15 @@ fun MapScreen() {
 }
 
 @Composable
-fun CameraScreen(droneConnected: Boolean = true, idDrawable: Int) {
+fun CameraScreen(droneStatus: DroneStatus, idDrawable: Int) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        if (!droneConnected)
-            Text(
-                text = "No connection...",
-                color = Color.White
-            )
+        if (droneStatus == DroneStatus.NO_REMOTE || droneStatus == DroneStatus.NO_DRONE)
+            DroneConnectingScreen(droneStatus)
         else
             Image(
                 painter = painterResource(idDrawable),
@@ -226,7 +239,106 @@ fun CameraScreen(droneConnected: Boolean = true, idDrawable: Int) {
 }
 
 @Composable
-fun DroneStatusWidget(connected: Boolean = true, onClick: () -> Unit) {
+fun DroneConnectingScreen(status: DroneStatus) {
+
+    val iconModifier = Modifier.size(40.dp)
+    var textStyle = remember {
+        mutableStateOf(
+            TextStyle(
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        )
+    }
+
+    fun addRedLine(add: Boolean = false, modifier: Modifier): Modifier {
+        if (add)
+            return Modifier.drawWithContent {
+                drawContent()
+                val start = (size.width - size.height) / 2
+                drawLine(
+                    Color.Red,
+                    Offset(start, 0F),
+                    Offset(size.width - start, size.height),
+                    strokeWidth = 10F
+                )
+            }.then(modifier)
+        return modifier
+    }
+
+    Box(
+        modifier = Modifier
+            .padding(16.dp)
+            .size(300.dp, 110.dp)
+            .onSizeChanged {
+                Log.d("BOX SIZE", it.toString())
+                textStyle.value = textStyle.value.copy(
+                    fontSize = (it.width / 50).sp,
+                    textIndent = TextIndent(
+                        firstLine = (it.width / 50).sp
+                    )
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1F)
+            ) {
+                Icon(
+                    ImageVector.vectorResource(R.drawable.ic_controller),
+                    tint = Color.White,
+                    modifier = addRedLine(status == DroneStatus.NO_REMOTE, iconModifier.weight(1F)),
+                    contentDescription = "Controller Icon"
+                )
+                VerticalDivider(color = Color.Gray, modifier = Modifier.weight(0.1F, false))
+                Row(modifier = Modifier.weight(3F), verticalAlignment = Alignment.CenterVertically) {
+                    if (status != DroneStatus.NO_REMOTE)
+                        Icon(
+                            Icons.Default.Circle,
+                            tint = Color.Green,
+                            contentDescription = "Remote Connected Status",
+                            modifier = Modifier.weight(0.3f, false)
+                        )
+                    Text(
+                        text = if (status == DroneStatus.NO_REMOTE) "Not Connected" else "Connected",
+                        style = textStyle.value,
+                        modifier = Modifier.weight(3F)
+                    )
+
+                }
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1F)
+            ) {
+                Icon(
+                    ImageVector.vectorResource(R.drawable.ic_quadcopter),
+                    tint = Color.White,
+                    modifier = addRedLine(true, iconModifier
+                        .weight(1F)
+                        .padding(4.dp)),
+                    contentDescription = "Drone Icon"
+                )
+                VerticalDivider(color = Color.Gray, modifier = Modifier.weight(0.1F, false))
+                Text(
+                    text = "Not Connected",
+                    style = textStyle.value,
+                    modifier = Modifier.weight(3F)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DroneStatusWidget(status: DroneStatus = DroneStatus.NO_DRONE, onClick: () -> Unit) {
 
     val statusDetailStyle = TextStyle(
         fontSize = 10.sp,
@@ -248,21 +360,23 @@ fun DroneStatusWidget(connected: Boolean = true, onClick: () -> Unit) {
         modifier = Modifier
             .shadow(8.dp, RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
-            .clickable(enabled = connected, onClick = onClick)
+            .clickable(enabled = status == DroneStatus.FLYING, onClick = onClick)
             .size(200.dp, 110.dp)
             .background(Color.White)
             .drawWithContent {
                 drawContent()
-                if (!connected)
+                if (status != DroneStatus.FLYING)
                     drawRect(Color.LightGray.copy(alpha = 0.8F))
             }
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(modifier = Modifier
-                .weight(1F)
-                .padding(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .weight(1F)
+                    .padding(8.dp)
+            ) {
                 Icon(
                     ImageVector.vectorResource(R.drawable.ic_quadcopter),
                     contentDescription = "Drone Icon",
@@ -332,7 +446,7 @@ fun DroneStatusWidget(connected: Boolean = true, onClick: () -> Unit) {
                         .padding(4.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("FLYING", style = statusMainStyle)
+                    Text(status.name, style = statusMainStyle)
                 }
             }
         }
@@ -340,13 +454,22 @@ fun DroneStatusWidget(connected: Boolean = true, onClick: () -> Unit) {
 }
 
 @Composable
-fun WatchButton() {
+fun WatchButton(navController: NavController?) {
     val watchOpened = remember { mutableStateOf(false) }
     val watchConnected = remember { mutableStateOf(true) }
     if (watchOpened.value) {
-        Button(onClick = {
-            watchOpened.value = !watchOpened.value
-        }) {
+        Button(
+            onClick = {
+                watchOpened.value = !watchOpened.value
+                navController?.navigate(AppScreens.CHAT.name)
+            },
+            colors = ButtonDefaults.buttonColors(
+                disabledContainerColor = Color.LightGray,
+                disabledContentColor = Color.Gray,
+                containerColor = Color.White,
+                contentColor = Color.Black
+            )
+        ) {
             Text(text = "Open messages")
         }
 
@@ -416,7 +539,7 @@ fun VirtualStick(size: Dp) {
 
 @Composable
 fun ActionsWidget(
-    enabled: MutableState<Boolean>,
+    status: MutableState<DroneStatus>,
     showMapActions: Boolean = false,
     onTakePhoto: () -> Unit
 ) {
@@ -426,12 +549,15 @@ fun ActionsWidget(
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
         Box(modifier = Modifier.weight(1F)) {
-            StopButton(enabled = enabled.value, onClick = {
-                enabled.value = !enabled.value
+            StopButton(enabled = status.value == DroneStatus.FLYING, onClick = {
+                status.value = DroneStatus.NO_DRONE
             })
         }
         Box(modifier = Modifier.weight(1F), contentAlignment = Alignment.Center) {
-            CaptureButton(enabled = enabled.value, onClick = onTakePhoto)
+            CaptureButton(
+                enabled =
+                status.value == DroneStatus.FLYING, onClick = onTakePhoto
+            )
         }
         Box(modifier = Modifier.weight(1F)) {
             if (showMapActions)
@@ -440,7 +566,10 @@ fun ActionsWidget(
                     verticalArrangement = Arrangement.SpaceEvenly
                 ) {
                     CenterPhoneButton()
-                    CenterDroneButton(enabled = enabled.value)
+                    CenterDroneButton(
+                        enabled =
+                        status.value == DroneStatus.FLYING
+                    )
                 }
         }
     }

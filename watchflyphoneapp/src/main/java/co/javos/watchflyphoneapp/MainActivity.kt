@@ -5,19 +5,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.navigation.compose.NavHost
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import co.javos.watchflyphoneapp.ui.theme.JAVOSDroneTheme
+
+enum class AppScreens {
+    MAIN,
+    CHAT
+}
 
 class MainActivity : ComponentActivity() {
 
-    private val REQUIRED_PERMISSION_LIST = arrayOf<String>(
+    private val permissionList = arrayOf<String>(
         Manifest.permission.ACCESS_COARSE_LOCATION,
         Manifest.permission.ACCESS_FINE_LOCATION
     )
@@ -27,29 +29,27 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Request permissions
-        requestPermissions(REQUIRED_PERMISSION_LIST, 0)
+        requestPermissions(permissionList, 0)
 
         enableEdgeToEdge()
         setContent {
             JAVOSDroneTheme {
-                MainScreen()
+                NavigationStack()
             }
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
+fun NavigationStack() {
+    val navController = rememberNavController()
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    JAVOSDroneTheme {
-        Greeting("Android")
+    NavHost(navController = navController, startDestination = AppScreens.MAIN.name) {
+        composable(AppScreens.MAIN.name) {
+            MainScreen(navController)
+        }
+        composable(AppScreens.CHAT.name) {
+            ChatScreen(navController)
+        }
     }
 }
