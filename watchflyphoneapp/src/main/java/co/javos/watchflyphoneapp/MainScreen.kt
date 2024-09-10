@@ -4,7 +4,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.media.AudioManager
+import android.os.CombinedVibration
+import android.os.VibrationEffect
+import android.os.VibratorManager
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,9 +63,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -100,7 +108,7 @@ enum class DroneStatus {
 
 @Preview(device = Devices.TABLET, uiMode = 0)
 @Composable
-fun MainScreen(navController: NavController? = null) {
+fun MainScreen(navController: NavController? = null, audioManager: AudioManager? = null, vibratorManager: VibratorManager? = null) {
     val dronePhotos = listOf(
         R.drawable.drone_bacata,
         R.drawable.drone_solar,
@@ -113,13 +121,22 @@ fun MainScreen(navController: NavController? = null) {
     val showAlert = remember { mutableStateOf(false) }
 
     Box {
-        if (showAlert.value)
+        if (showAlert.value) {
+            audioManager?.playSoundEffect(
+                AudioManager.FX_KEYPRESS_INVALID,
+                1F
+            )
+            val vibrateEffect = VibrationEffect.createOneShot(1000, VibrationEffect.DEFAULT_AMPLITUDE)
+            vibratorManager?.vibrate(
+                CombinedVibration.createParallel(vibrateEffect)
+            )
             AlertPopup(
                 AlertType.WARNING,
                 "Warning",
                 "lorem ipsum dolor sit amet".repeat(15),
                 onDismiss = { showAlert.value = false }
             )
+        }
 
         if (showMap.value) MapScreen() else CameraScreen(
             droneStatus.value,
