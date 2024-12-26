@@ -1,21 +1,41 @@
 package co.javos.watchflyphoneapp.viewmodels
 
 import android.util.Log
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import co.javos.watchflyphoneapp.models.AuthorDevice
 import co.javos.watchflyphoneapp.models.Message
+import co.javos.watchflyphoneapp.repository.DJIController
 import co.javos.watchflyphoneapp.repository.WatchMessageConnection
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
-class WatchChatViewModel(private val watchMessageConnection: WatchMessageConnection) : ViewModel(), MessageClient.OnMessageReceivedListener {
+class WatchChatViewModel(
+    private val watchMessageConnection: WatchMessageConnection,
+    private val djiController: DJIController
+) : ViewModel(), MessageClient.OnMessageReceivedListener {
     private val _messages = mutableStateListOf<Message>()
     val messages: MutableList<Message> = _messages
 
     init {
         watchMessageConnection.addMessageListener(this)
+        viewModelScope.launch {
+            djiController.droneStatus.collect { value ->
+                // Handle state updates
+                Log.d("WatchChatViewModel", "Drone Status Changed sending message")
+                val json = value.toJsonObject()
+                val message = Message(
+                    content = json.toString()
+                )
+                addMessage(message)
+            }
+        }
     }
 
     fun addMessage(message: Message) {
@@ -50,11 +70,12 @@ class WatchChatViewModel(private val watchMessageConnection: WatchMessageConnect
         return _messages.size
     }
 
-    class WatchChatViewModelFactory(private val watchMessageConnection: WatchMessageConnection) : ViewModelProvider.Factory {
+    class WatchChatViewModelFactory(private val watchMessageConnection: WatchMessageConnection, private val djiController: DJIController) :
+        ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(WatchChatViewModel::class.java)) {
-                return WatchChatViewModel(watchMessageConnection) as T
+                return WatchChatViewModel(watchMessageConnection, djiController) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
@@ -63,8 +84,7 @@ class WatchChatViewModel(private val watchMessageConnection: WatchMessageConnect
     override fun onMessageReceived(event: MessageEvent) {
         val message = String(event.data)
         val newMessage = Message(
-            content = message,
-            author = AuthorDevice.WATCH
+            content = message, author = AuthorDevice.WATCH
         )
         addMessage(newMessage)
     }

@@ -1,5 +1,6 @@
 package co.javos.watchflyphoneapp.ui.widgets
 
+import android.location.Location
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,7 +43,9 @@ class DroneStatusWidget {
     @Composable
     fun DroneStatus(viewModel: DroneStatusViewModel?, onClick: () -> Unit = {}) {
 
-        val status = viewModel?.droneStatus?.value?.state ?: DroneState.NO_REMOTE
+        val status = viewModel?.droneStatus?.collectAsState()?.value
+
+        val distanceFromHome = status?.location?.distanceTo(status.homeLocation ?: Location("None"))
 
 
 
@@ -59,18 +63,18 @@ class DroneStatusWidget {
             fontWeight = FontWeight.Bold
         )
 
-        val iconModifier = Modifier.size(20.dp)
+        val iconModifier = Modifier.size(18.dp)
 
         Box(
             modifier = Modifier
                 .shadow(8.dp, RoundedCornerShape(10.dp))
                 .clip(RoundedCornerShape(10.dp))
-                .clickable(enabled = status == DroneState.FLYING, onClick = onClick)
+                .clickable(enabled = status?.state == DroneState.FLYING, onClick = onClick)
                 .size(200.dp, 110.dp)
                 .background(Color.White)
                 .drawWithContent {
                     drawContent()
-                    if (status != DroneState.FLYING)
+                    if (viewModel?.droneStatus?.value?.isDroneConnected() != true)
                         drawRect(Color.LightGray.copy(alpha = 0.8F))
                 }
         ) {
@@ -100,23 +104,29 @@ class DroneStatusWidget {
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.SignalCellularAlt,
-                            contentDescription = "Drone Signal",
-                            modifier = iconModifier
-                        )
-                        Icon(
-                            Icons.Default.SatelliteAlt,
-                            contentDescription = "GPS Signal",
-                            modifier = iconModifier
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.SignalCellularAlt,
+                                contentDescription = "Drone Signal",
+                                modifier = iconModifier
+                            )
+                            Text("${status?.signalStrength}%", style = statusDetailStyle)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.SatelliteAlt,
+                                contentDescription = "GPS Signal",
+                                modifier = iconModifier
+                            )
+                            Text(" ${status?.gpsSignalStrength}", style = statusDetailStyle)
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 Icons.Default.Battery5Bar,
                                 contentDescription = "Battery Level",
                                 modifier = iconModifier
                             )
-                            Text("100%", style = statusDetailStyle)
+                            Text("${status?.battery}%", style = statusDetailStyle)
                         }
                     }
                     Row(
@@ -129,10 +139,11 @@ class DroneStatusWidget {
                         Column(
                             modifier = Modifier.weight(1F),
                             horizontalAlignment = Alignment.CenterHorizontally
+
                         ) {
                             Text("Altitude", style = statusTitleStyle)
-                            Text("120 m", style = statusDetailStyle)
-                            Text("+ 2.0 m/s", style = statusDetailStyle)
+                            Text("${status?.altitude} m", style = statusDetailStyle)
+                            Text("${status?.verticalSpeed} m/s", style = statusDetailStyle)
                         }
                         VerticalDivider(color = Color.Gray, modifier = Modifier.weight(0.1F, false))
                         Column(
@@ -140,8 +151,9 @@ class DroneStatusWidget {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text("Distance", style = statusTitleStyle)
-                            Text("520 m", style = statusDetailStyle)
-                            Text("11.0 m/s", style = statusDetailStyle)
+                            Text(
+                                "${distanceFromHome?.toInt() ?: 0} m", style = statusDetailStyle)
+                            Text("${status?.horizontalSpeed} m/s", style = statusDetailStyle)
                         }
                     }
                     HorizontalDivider(color = Color.Gray)
@@ -151,7 +163,7 @@ class DroneStatusWidget {
                             .padding(4.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(status.name, style = statusMainStyle)
+                        Text(status?.state?.name ?: "NO STATE", style = statusMainStyle)
                     }
                 }
             }

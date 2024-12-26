@@ -21,6 +21,8 @@ import co.javos.watchflyphoneapp.ui.screens.MainView
 import co.javos.watchflyphoneapp.ui.screens.WatchChatView
 import co.javos.watchflyphoneapp.ui.theme.JAVOSDroneTheme
 import co.javos.watchflyphoneapp.viewmodels.DroneStatusViewModel
+import co.javos.watchflyphoneapp.viewmodels.LiveFeedViewModel
+import co.javos.watchflyphoneapp.viewmodels.MapViewModel
 import co.javos.watchflyphoneapp.viewmodels.WatchButtonViewModel
 import co.javos.watchflyphoneapp.viewmodels.WatchChatViewModel
 import com.google.android.gms.wearable.CapabilityClient
@@ -50,14 +52,23 @@ class MainActivity : ComponentActivity() {
         dataClient, messageClient, capabilityClient
     ) }
 
-    private val djiController by lazy { DJIController(DJISDKManager.getInstance()) }
+    private val djiController by lazy { DJIController(DJISDKManager.getInstance(), this) }
 
-    private val droneStatusViewModel: DroneStatusViewModel by viewModels()
+    // ViewModels
+    private val droneStatusViewModel: DroneStatusViewModel by viewModels {
+        DroneStatusViewModel.DroneStatusViewModelFactory(djiController)
+    }
     private val watchChatViewModel: WatchChatViewModel by viewModels {
-        WatchChatViewModel.WatchChatViewModelFactory(watchMessageConnection)
+        WatchChatViewModel.WatchChatViewModelFactory(watchMessageConnection, djiController)
     }
     private val watchButtonViewModel: WatchButtonViewModel by viewModels {
         WatchButtonViewModel.WatchButtonViewModelFactory(watchMessageConnection)
+    }
+    private val liveFeedViewModel: LiveFeedViewModel by viewModels {
+        LiveFeedViewModel.LiveFeedViewModelFactory(djiController)
+    }
+    private val mapViewModel: MapViewModel by viewModels {
+        MapViewModel.MapViewModelFactory(djiController, this.applicationContext)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +95,9 @@ class MainActivity : ComponentActivity() {
                     vibratorManager,
                     droneStatusViewModel,
                     watchChatViewModel,
-                    watchButtonViewModel
+                    watchButtonViewModel,
+                    liveFeedViewModel,
+                    mapViewModel
                 )
             }
         }
@@ -121,7 +134,9 @@ fun NavigationStack(
     vibratorManager: VibratorManager,
     droneStatusViewModel: DroneStatusViewModel,
     watchChatViewModel: WatchChatViewModel,
-    watchButtonViewModel: WatchButtonViewModel
+    watchButtonViewModel: WatchButtonViewModel,
+    liveFeedViewModel: LiveFeedViewModel,
+    mapViewModel: MapViewModel
 ) {
     val navController = rememberNavController()
 
@@ -132,7 +147,9 @@ fun NavigationStack(
                 audioManager,
                 vibratorManager,
                 droneStatusViewModel = droneStatusViewModel,
-                watchButtonViewModel = watchButtonViewModel
+                watchButtonViewModel = watchButtonViewModel,
+                liveFeedViewModel = liveFeedViewModel,
+                mapViewModel = mapViewModel
             )
         }
         composable(AppScreens.CHAT.name) {

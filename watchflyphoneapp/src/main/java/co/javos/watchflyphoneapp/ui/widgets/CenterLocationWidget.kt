@@ -12,13 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import co.javos.watchflyphoneapp.viewmodels.MapViewModel
 
 class CenterLocationWidget {
 
     @Composable
-    fun CenterLocationButton() {
+    fun CenterLocationButton(viewModel: MapViewModel? = null) {
         IconButton(
-            onClick = { },
+            onClick = {
+                viewModel?.centerDeviceLocation()
+            },
             colors = IconButtonColors(
                 disabledContainerColor = Color.LightGray,
                 disabledContentColor = Color.Gray,

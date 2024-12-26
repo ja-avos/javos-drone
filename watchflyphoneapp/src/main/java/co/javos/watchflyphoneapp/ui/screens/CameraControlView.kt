@@ -13,13 +13,15 @@ import co.javos.watchflyphoneapp.ui.widgets.CameraCaptureWidget
 import co.javos.watchflyphoneapp.ui.widgets.CenterLocationWidget
 import co.javos.watchflyphoneapp.ui.widgets.DroneLocationWidget
 import co.javos.watchflyphoneapp.ui.widgets.DroneStopWidget
+import co.javos.watchflyphoneapp.viewmodels.MapViewModel
 
 class CameraControlView {
     @Composable
     fun ActionsWidget(
         status: MutableState<DroneState>,
         showMapActions: Boolean = false,
-        onTakePhoto: () -> Unit
+        onTakePhoto: () -> Unit,
+        mapViewModel: MapViewModel? = null
     ) {
         Column(
             modifier = Modifier.fillMaxHeight(),
@@ -43,10 +45,11 @@ class CameraControlView {
                         modifier = Modifier.fillMaxHeight(),
                         verticalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        CenterLocationWidget().CenterLocationButton()
+                        CenterLocationWidget().CenterLocationButton(
+                            viewModel = mapViewModel
+                        )
                         DroneLocationWidget().DroneLocationButton(
-                            enabled =
-                            status.value == DroneState.FLYING
+                            viewModel = mapViewModel
                         )
                     }
             }

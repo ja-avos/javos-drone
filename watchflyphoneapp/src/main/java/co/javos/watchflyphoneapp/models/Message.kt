@@ -5,7 +5,7 @@ enum class AuthorDevice {
 }
 
 data class Message(
-    val content: String,
-    val author: AuthorDevice,
+    val content: String = "NO MESSAGE",
+    val author: AuthorDevice = AuthorDevice.PHONE,
     val timestamp: Long = System.currentTimeMillis()
 )

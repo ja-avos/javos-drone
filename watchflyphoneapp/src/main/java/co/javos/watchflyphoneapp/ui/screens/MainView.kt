@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -31,6 +32,8 @@ import co.javos.watchflyphoneapp.ui.widgets.JoysticksWidget
 import co.javos.watchflyphoneapp.ui.widgets.ScreenPreviewWidget
 import co.javos.watchflyphoneapp.ui.widgets.WatchChatWidget
 import co.javos.watchflyphoneapp.viewmodels.DroneStatusViewModel
+import co.javos.watchflyphoneapp.viewmodels.LiveFeedViewModel
+import co.javos.watchflyphoneapp.viewmodels.MapViewModel
 import co.javos.watchflyphoneapp.viewmodels.WatchButtonViewModel
 
 class MainView {
@@ -41,7 +44,9 @@ class MainView {
         audioManager: AudioManager? = null,
         vibratorManager: VibratorManager? = null,
         droneStatusViewModel: DroneStatusViewModel? = null,
-        watchButtonViewModel: WatchButtonViewModel? = null
+        watchButtonViewModel: WatchButtonViewModel? = null,
+        liveFeedViewModel: LiveFeedViewModel? = null,
+        mapViewModel: MapViewModel? = null
     ) {
         val dronePhotos = listOf(
             R.drawable.drone_bacata,
@@ -76,10 +81,10 @@ class MainView {
             }
 
             if (showMap.value)
-                MapView().Map()
+                MapView().Map(mapViewModel)
             else LiveFeedView().LiveFeed(
-                droneStatus.value,
-                idDronePhoto.intValue
+                liveFeedViewModel,
+                LocalContext.current
             )
             Row(
                 modifier = Modifier
@@ -102,12 +107,14 @@ class MainView {
                                 dronePhotos[(dronePhotos.indexOf(idDronePhoto.intValue) + 1) % dronePhotos.size]
                         })
                     WatchChatWidget().WatchButton(navController, watchButtonViewModel)
-                    ScreenPreviewWidget().ScreenPreview(onTap = { showMap.value = !showMap.value }) {
+                    ScreenPreviewWidget().ScreenPreview(onTap = {
+                        showMap.value = !showMap.value
+                    }) {
                         if (!showMap.value)
-                            MapView().Map()
+                            MapView().Map(mapViewModel)
                         else LiveFeedView().LiveFeed(
-                            droneStatus.value,
-                            idDronePhoto.intValue
+                            liveFeedViewModel,
+                            LocalContext.current
                         )
                     }
                 }
@@ -136,7 +143,9 @@ class MainView {
                         showMapActions = showMap.value,
                         onTakePhoto = {
                             showAlert.value = true
-                        })
+                        },
+                        mapViewModel = mapViewModel
+                    )
                 }
             }
         }

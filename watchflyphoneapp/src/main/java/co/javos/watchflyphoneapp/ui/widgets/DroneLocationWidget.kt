@@ -15,13 +15,18 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import co.javos.watchflyphoneapp.R
+import co.javos.watchflyphoneapp.viewmodels.MapViewModel
 
 class DroneLocationWidget {
     @Composable
-    fun DroneLocationButton(enabled: Boolean) {
+    fun DroneLocationButton(viewModel: MapViewModel? = null) {
+        val enabled = viewModel?.droneStatus?.value?.isDroneConnected() ?: false
+
         IconButton(
             enabled = enabled,
-            onClick = {},
+            onClick = {
+                viewModel?.centerOnDrone()
+            },
             colors = IconButtonColors(
                 disabledContainerColor = Color.LightGray,
                 disabledContentColor = Color.Gray,

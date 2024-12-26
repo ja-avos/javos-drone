@@ -1,6 +1,7 @@
 package co.javos.watchflyphoneapp
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
@@ -24,6 +25,13 @@ class Utils {
             val canvas = Canvas(bitmap)
             vectorDrawable!!.draw(canvas)
             return BitmapDescriptorFactory.fromBitmap(bitmap)
+        }
+
+        fun checkPermission(context: Context, permission: String): Boolean {
+            return ContextCompat.checkSelfPermission(
+                context,
+                permission
+            ) == PackageManager.PERMISSION_GRANTED
         }
     }
 }
