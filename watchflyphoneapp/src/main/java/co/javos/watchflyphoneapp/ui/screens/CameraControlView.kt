@@ -13,6 +13,7 @@ import co.javos.watchflyphoneapp.ui.widgets.CameraCaptureWidget
 import co.javos.watchflyphoneapp.ui.widgets.CenterLocationWidget
 import co.javos.watchflyphoneapp.ui.widgets.DroneLocationWidget
 import co.javos.watchflyphoneapp.ui.widgets.DroneStopWidget
+import co.javos.watchflyphoneapp.viewmodels.CameraControlsViewModel
 import co.javos.watchflyphoneapp.viewmodels.MapViewModel
 
 class CameraControlView {
@@ -21,7 +22,8 @@ class CameraControlView {
         status: MutableState<DroneState>,
         showMapActions: Boolean = false,
         onTakePhoto: () -> Unit,
-        mapViewModel: MapViewModel? = null
+        mapViewModel: MapViewModel? = null,
+        cameraControlsViewModel: CameraControlsViewModel? = null
     ) {
         Column(
             modifier = Modifier.fillMaxHeight(),
@@ -29,15 +31,10 @@ class CameraControlView {
             verticalArrangement = Arrangement.SpaceEvenly
         ) {
             Box(modifier = Modifier.weight(1F)) {
-                DroneStopWidget().StopButton(enabled = status.value == DroneState.FLYING, onClick = {
-                    status.value = DroneState.NO_DRONE
-                })
+                DroneStopWidget().StopButton(cameraControlsViewModel)
             }
             Box(modifier = Modifier.weight(1F), contentAlignment = Alignment.Center) {
-                CameraCaptureWidget().CaptureButton(
-                    enabled =
-                    status.value == DroneState.FLYING, onClick = onTakePhoto
-                )
+                CameraCaptureWidget().CaptureButton(cameraControlsViewModel)
             }
             Box(modifier = Modifier.weight(1F)) {
                 if (showMapActions)

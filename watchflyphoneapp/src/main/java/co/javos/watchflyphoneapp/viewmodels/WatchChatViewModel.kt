@@ -1,7 +1,6 @@
 package co.javos.watchflyphoneapp.viewmodels
 
 import android.util.Log
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -12,8 +11,6 @@ import co.javos.watchflyphoneapp.repository.DJIController
 import co.javos.watchflyphoneapp.repository.WatchMessageConnection
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class WatchChatViewModel(

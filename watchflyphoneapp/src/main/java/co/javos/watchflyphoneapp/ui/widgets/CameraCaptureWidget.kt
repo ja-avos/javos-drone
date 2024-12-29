@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -14,15 +15,20 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import co.javos.watchflyphoneapp.viewmodels.CameraControlsViewModel
 
-class CameraCaptureWidget {
+class CameraCaptureWidget() {
     @Composable
-    fun CaptureButton(enabled: Boolean, onClick: () -> Unit) {
+    fun CaptureButton(viewModel: CameraControlsViewModel? = null) {
+
+        val enabled = viewModel?.isCameraReady?.collectAsState()?.value ?: false
         val buttonColor = if (enabled) Color.White else Color.Gray
         Box(
             modifier = Modifier
                 .clip(CircleShape)
-                .clickable(enabled = enabled, onClick = onClick)
+                .clickable(enabled = enabled, onClick = {
+                    viewModel?.takePhoto()
+                })
                 .border(3.dp, buttonColor, CircleShape)
                 .size(80.dp)
                 .shadow(6.dp, CircleShape)

@@ -31,6 +31,7 @@ import co.javos.watchflyphoneapp.ui.widgets.DroneStatusWidget
 import co.javos.watchflyphoneapp.ui.widgets.JoysticksWidget
 import co.javos.watchflyphoneapp.ui.widgets.ScreenPreviewWidget
 import co.javos.watchflyphoneapp.ui.widgets.WatchChatWidget
+import co.javos.watchflyphoneapp.viewmodels.CameraControlsViewModel
 import co.javos.watchflyphoneapp.viewmodels.DroneStatusViewModel
 import co.javos.watchflyphoneapp.viewmodels.LiveFeedViewModel
 import co.javos.watchflyphoneapp.viewmodels.MapViewModel
@@ -46,7 +47,8 @@ class MainView {
         droneStatusViewModel: DroneStatusViewModel? = null,
         watchButtonViewModel: WatchButtonViewModel? = null,
         liveFeedViewModel: LiveFeedViewModel? = null,
-        mapViewModel: MapViewModel? = null
+        mapViewModel: MapViewModel? = null,
+        cameraControlsViewModel: CameraControlsViewModel? = null
     ) {
         val dronePhotos = listOf(
             R.drawable.drone_bacata,
@@ -144,7 +146,8 @@ class MainView {
                         onTakePhoto = {
                             showAlert.value = true
                         },
-                        mapViewModel = mapViewModel
+                        mapViewModel = mapViewModel,
+                        cameraControlsViewModel = cameraControlsViewModel
                     )
                 }
             }

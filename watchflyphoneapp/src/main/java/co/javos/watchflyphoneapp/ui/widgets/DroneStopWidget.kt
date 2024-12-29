@@ -11,17 +11,25 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import co.javos.watchflyphoneapp.viewmodels.CameraControlsViewModel
 
 class DroneStopWidget {
     @Composable
-    fun StopButton(enabled: Boolean, onClick: () -> Unit) {
+    fun StopButton(viewModel: CameraControlsViewModel?) {
+        val enabled = viewModel?.isDroneConnected?.collectAsState()?.value ?: false
+        val onClick = {
+            viewModel?.stopDrone()
+        }
         IconButton(
             enabled = enabled,
-            onClick = onClick,
+            onClick = {
+                viewModel?.stopDrone()
+            },
             colors = IconButtonColors(
                 disabledContainerColor = Color.LightGray,
                 disabledContentColor = Color.Gray,

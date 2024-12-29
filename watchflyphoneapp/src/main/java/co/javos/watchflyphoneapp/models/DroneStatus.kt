@@ -11,8 +11,11 @@ enum class DroneState {
     NO_DRONE,
     MOTORS_OFF,
     MOTORS_ON,
+    TAKING_OFF,
     FLYING,
+    CONFIRM_LANDING,
     LANDED,
+    GOING_HOME,
     ERROR
 }
 
