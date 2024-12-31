@@ -6,6 +6,9 @@ import android.util.Log
 import androidx.compose.ui.text.font.FontVariation
 import co.javos.watchflyphoneapp.models.DroneState
 import co.javos.watchflyphoneapp.models.DroneStatus
+import co.javos.watchflyphoneapp.models.RemoteType
+import co.javos.watchflyphoneapp.models.Stick
+import co.javos.watchflyphoneapp.models.VirtualSticks
 import dji.common.battery.BatteryState
 import dji.common.camera.SettingsDefinitions
 import dji.common.error.DJIError
@@ -22,6 +25,7 @@ import dji.sdk.battery.Battery
 import dji.sdk.camera.Camera
 import dji.sdk.flightcontroller.FlightController
 import dji.sdk.products.Aircraft
+import dji.sdk.remotecontroller.RemoteController
 import dji.sdk.sdkmanager.DJISDKInitEvent
 import dji.sdk.sdkmanager.DJISDKManager
 import dji.sdk.sdkmanager.DJISDKManager.SDKManagerCallback
@@ -36,6 +40,9 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
     private val _droneStatus = MutableStateFlow(DroneStatus())
     val droneStatus: MutableStateFlow<DroneStatus> = _droneStatus
+
+    private val _virtualSticks = MutableStateFlow(VirtualSticks())
+    val virtualSticks: MutableStateFlow<VirtualSticks> = _virtualSticks
 
     val isCameraReady: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isDroneConnected: MutableStateFlow<Boolean> = MutableStateFlow(false)
@@ -108,7 +115,10 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
                 Log.d(TAG, "Drone Diagnostics: $diagnostics")
                 for (diagnostic in diagnostics) {
                     Log.d(TAG, "Drone Diagnostic: $diagnostic")
-                    Log.d(TAG, "Drone Diagnostic Level: ${diagnostic.healthInformation?.warningLevel}")
+                    Log.d(
+                        TAG,
+                        "Drone Diagnostic Level: ${diagnostic.healthInformation?.warningLevel}"
+                    )
                 }
 
             }
@@ -241,6 +251,13 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
                 }
             }
 
+            ComponentKey.REMOTE_CONTROLLER -> {
+                if (newComponent != null && newComponent.isConnected && newComponent is RemoteController) {
+                    Log.d(TAG, "Registering remote sticks listener")
+                    registerRemoteSticksListener(newComponent)
+                }
+            }
+
             else -> {
                 Log.d(TAG, "Unknown Component: ${key?.name}")
             }
@@ -343,17 +360,32 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
         }
     }
 
-    fun changeVirtualSticks() {
-
-        val flightControlData = FlightControlData()
-
-        (manager.product as Aircraft?)?.flightController?.sendVirtualStickFlightControlData() {
-
+    fun registerRemoteSticksListener(remoteController: RemoteController) {
+        remoteController.setHardwareStateCallback { state ->
+            val maxLimit = 660
+            _virtualSticks.value = VirtualSticks(
+                RemoteType.REMOTE_CONTROLLER,
+                Stick(
+                    (state.rightStick?.horizontalPosition ?: 0) * 100 / maxLimit,
+                    (state.rightStick?.verticalPosition ?: 0) * 100 / maxLimit
+                ),
+                Stick(
+                    (state.leftStick?.horizontalPosition ?: 0) * 100 / maxLimit,
+                    (state.leftStick?.verticalPosition ?: 0) * 100 / maxLimit
+                )
+            )
         }
+        Log.d(TAG, "Remote hardware state callback registered successfully")
 
-        (manager.product as Aircraft?)?.remoteController.setHardwareStateCallback { state ->
-            state.leftStick.
-        }
     }
+
+//    fun changeVirtualSticks() {
+//
+//        val flightControlData = FlightControlData()
+//
+//        (manager.product as Aircraft?)?.flightController?.sendVirtualStickFlightControlData() {
+//
+//        }
+//    }
 
 }

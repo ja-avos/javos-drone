@@ -22,6 +22,7 @@ import co.javos.watchflyphoneapp.ui.screens.WatchChatView
 import co.javos.watchflyphoneapp.ui.theme.JAVOSDroneTheme
 import co.javos.watchflyphoneapp.viewmodels.CameraControlsViewModel
 import co.javos.watchflyphoneapp.viewmodels.DroneStatusViewModel
+import co.javos.watchflyphoneapp.viewmodels.JoysticksViewModel
 import co.javos.watchflyphoneapp.viewmodels.LiveFeedViewModel
 import co.javos.watchflyphoneapp.viewmodels.MapViewModel
 import co.javos.watchflyphoneapp.viewmodels.WatchButtonViewModel
@@ -74,6 +75,9 @@ class MainActivity : ComponentActivity() {
     private val cameraControlsViewModel: CameraControlsViewModel by viewModels {
         CameraControlsViewModel.CameraControlsViewModelFactory(djiController)
     }
+    private val joysticksViewModel: JoysticksViewModel by viewModels {
+        JoysticksViewModel.JoysticksViewModelFactory(djiController)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -102,7 +106,8 @@ class MainActivity : ComponentActivity() {
                     watchButtonViewModel,
                     liveFeedViewModel,
                     mapViewModel,
-                    cameraControlsViewModel
+                    cameraControlsViewModel,
+                    joysticksViewModel
                 )
             }
         }
@@ -142,7 +147,8 @@ fun NavigationStack(
     watchButtonViewModel: WatchButtonViewModel,
     liveFeedViewModel: LiveFeedViewModel,
     mapViewModel: MapViewModel,
-    cameraControlsViewModel: CameraControlsViewModel
+    cameraControlsViewModel: CameraControlsViewModel,
+    joysticksViewModel: JoysticksViewModel
 ) {
     val navController = rememberNavController()
 
@@ -156,7 +162,8 @@ fun NavigationStack(
                 watchButtonViewModel = watchButtonViewModel,
                 liveFeedViewModel = liveFeedViewModel,
                 mapViewModel = mapViewModel,
-                cameraControlsViewModel = cameraControlsViewModel
+                cameraControlsViewModel = cameraControlsViewModel,
+                joysticksViewModel = joysticksViewModel
             )
         }
         composable(AppScreens.CHAT.name) {
