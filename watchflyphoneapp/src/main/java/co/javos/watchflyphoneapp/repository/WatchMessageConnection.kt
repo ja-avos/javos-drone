@@ -2,6 +2,7 @@ package co.javos.watchflyphoneapp.repository
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
+import co.javos.watchflyphoneapp.models.Command
 import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.CapabilityInfo
 import com.google.android.gms.wearable.DataClient
@@ -29,6 +30,13 @@ class WatchMessageConnection(
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         Log.d("WatchMessageConnection", "onMessageReceived: $messageEvent")
+        try {
+            val receivedCommand = Command.fromString(String(messageEvent.data))
+            Log.d("WatchMessageConnection", "Received command: $receivedCommand")
+
+        } catch (e: Exception) {
+            Log.e("WatchMessageConnection", "Error sending message: ${e.message}")
+        }
     }
 
     override fun onCapabilityChanged(capabilityInfo: CapabilityInfo) {
@@ -41,14 +49,10 @@ class WatchMessageConnection(
         Log.d("WatchMessageConnection", "Connected a watch: ${_isConnected.value}")
     }
 
-    fun sendMessageToWatch(message: String) {
+    fun sendMessageToWatch(message: Command) {
         val nodes = capabilityInfo?.nodes
         nodes?.forEach { node ->
-            messageClient.sendMessage(node.id, "/message", message.toByteArray())
+            messageClient.sendMessage(node.id, "/message", message.toString().toByteArray())
         }
-    }
-
-    fun addMessageListener(listener: MessageClient.OnMessageReceivedListener) {
-        messageClient.addListener(listener)
     }
 }

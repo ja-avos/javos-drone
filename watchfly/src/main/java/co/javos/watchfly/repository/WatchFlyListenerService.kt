@@ -3,7 +3,7 @@ package co.javos.watchfly.repository
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.util.Log
-import co.javos.watchfly.presentation.MainActivity
+import co.javos.watchfly.MainActivity
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable

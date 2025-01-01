@@ -117,6 +117,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         dataClient.addListener(watchMessageConnection)
         messageClient.addListener(watchMessageConnection)
+        messageClient.addListener(watchChatViewModel)
         capabilityClient.addListener(
             watchMessageConnection,
             Uri.parse("wear://"),
@@ -134,6 +135,7 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         dataClient.removeListener(watchMessageConnection)
         messageClient.removeListener(watchMessageConnection)
+        messageClient.removeListener(watchChatViewModel)
         capabilityClient.removeListener(watchMessageConnection)
     }
 }

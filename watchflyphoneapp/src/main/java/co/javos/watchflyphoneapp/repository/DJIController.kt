@@ -272,6 +272,22 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
         Log.d(TAG, "onDatabaseDownloadProgress")
     }
 
+    fun turnMotorsOn() {
+        Log.d(TAG, "turnMotorsOn: ")
+        val flightController = (manager.product as Aircraft?)?.flightController
+        flightController?.turnOnMotors {
+            Log.d(TAG, "turnMotorsOn: ${it?.description ?: "success"}")
+        }
+    }
+
+    fun turnMotorsOff() {
+        Log.d(TAG, "turnMotorsOff: ")
+        val flightController = (manager.product as Aircraft?)?.flightController
+        flightController?.turnOffMotors {
+            Log.d(TAG, "turnMotorsOff: ${it?.description ?: "success"}")
+        }
+    }
+
     fun takePhoto() {
         val camera = manager.product?.camera
         Log.d(TAG, "takePhoto: Camera ready ${isCameraReady.value} and camera $camera")

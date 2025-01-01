@@ -1,7 +1,8 @@
-package co.javos.watchflyphoneapp.models
+package co.javos.watchfly.models
 
 import android.location.Location
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 
 enum class DroneState {
     SDK_NOT_INITIALIZED,
@@ -14,13 +15,13 @@ enum class DroneState {
     TAKING_OFF,
     FLYING,
     CONFIRM_LANDING,
-    LANDED,
+    LANDING,
     GOING_HOME,
     ERROR
 }
 
 class DroneStatus(
-    var state: DroneState = DroneState.SDK_NOT_INITIALIZED,
+    var state: DroneState = DroneState.NO_REMOTE,
     var battery: Int = 0,
     var altitude: Float = 0F,
     var location: Location? = null,
@@ -53,7 +54,7 @@ class DroneStatus(
             DroneState.TAKING_OFF,
             DroneState.FLYING,
             DroneState.CONFIRM_LANDING,
-            DroneState.LANDED,
+            DroneState.LANDING,
             DroneState.GOING_HOME,
             DroneState.ERROR
         )
@@ -100,5 +101,34 @@ class DroneStatus(
         jsonObject.addProperty("signalStrength", signalStrength)
         jsonObject.addProperty("gpsSignalStrength", gpsSignalStrength)
         return jsonObject
+    }
+
+    companion object {
+        fun fromJsonObject(jsonObject: JsonObject): DroneStatus {
+            val state = DroneState.valueOf(jsonObject.get("state").asString)
+            val battery = jsonObject.get("battery").asInt
+            val altitude = jsonObject.get("altitude").asFloat
+            val verticalSpeed = jsonObject.get("verticalSpeed").asFloat
+            val horizontalSpeed = jsonObject.get("horizontalSpeed").asFloat
+            val rotation = jsonObject.get("rotation").asFloat
+            val signalStrength = jsonObject.get("signalStrength").asInt
+            val gpsSignalStrength = jsonObject.get("gpsSignalStrength").asInt
+
+            return DroneStatus(
+                state = state,
+                battery = battery,
+                altitude = altitude,
+                verticalSpeed = verticalSpeed,
+                horizontalSpeed = horizontalSpeed,
+                rotation = rotation,
+                signalStrength = signalStrength,
+                gpsSignalStrength = gpsSignalStrength
+            )
+        }
+
+        fun fromString(string: String): DroneStatus {
+            val json = JsonParser.parseString(string).asJsonObject
+            return fromJsonObject(json)
+        }
     }
 }
