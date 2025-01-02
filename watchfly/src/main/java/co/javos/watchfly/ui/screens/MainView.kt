@@ -45,12 +45,13 @@ fun MainView(
         ) {
             Column {
                 Row(modifier = Modifier.weight(1F)) {
-                    BlinkingWidget(false, modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1F)
-                        .clickable(enabled = droneStatus.state == DroneState.FLYING) {
-                            viewModel?.togglePYRPYControlMode()
-                        }) {
+                    BlinkingWidget(false,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1F)
+                            .clickable(enabled = droneStatus.state == DroneState.FLYING) {
+                                viewModel?.togglePYRPYControlMode()
+                            }) {
                         Text(
                             "$controlText\nControls",
                             modifier = Modifier.rotate(-45F),
@@ -124,6 +125,6 @@ fun MainView(
                 }
             }
         }
-        DroneStatusWidget()
+        DroneStatusWidget(viewModel?.droneStatus?.collectAsState()?.value)
     }
 }

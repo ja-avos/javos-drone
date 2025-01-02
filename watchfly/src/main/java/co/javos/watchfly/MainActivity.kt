@@ -208,7 +208,7 @@ fun WatchFlyApp(
         if (!droneStatus.isDroneConnected() || !droneStatusVM.isPhoneConnected.collectAsState().value)
             ConnectingView(droneStatusVM)
         else
-            if (droneStatus.state in listOf(
+            if (false && droneStatus.state in listOf(
                     DroneState.MOTORS_OFF,
                     DroneState.MOTORS_ON,
                     DroneState.TAKING_OFF

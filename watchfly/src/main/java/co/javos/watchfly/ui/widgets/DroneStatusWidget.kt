@@ -25,15 +25,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Devices
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.Text
+import co.javos.watchfly.models.DroneStatus
 
+@Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true, apiLevel = 26)
 @Composable
-fun DroneStatusWidget() {
+fun DroneStatusWidget(droneStatus: DroneStatus? = null) {
+
     Box(
         modifier = Modifier
             .clip(CircleShape)
@@ -51,25 +56,19 @@ fun DroneStatusWidget() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.Battery0Bar, "Good Signal", modifier = Modifier.size(12.dp))
-                Text("53%", fontSize = TextUnit(1.5F, TextUnitType.Em))
+                Text("${droneStatus?.battery ?: "- "}%", fontSize = TextUnit(1.5F, TextUnitType.Em))
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier.width(IntrinsicSize.Min),
-                ) {
-                    Text("120m", fontSize = TextUnit(1.2F, TextUnitType.Em))
-                    HorizontalDivider()
-                    Text("600m", fontSize = TextUnit(1.2F, TextUnitType.Em))
-                }
-                Icon(
-                    Icons.Default.SignalCellularAlt,
-                    "Good Signal",
-                    modifier = Modifier.size(20.dp)
+                DistanceWidget(
+                    droneStatus?.location,
+                    droneStatus?.homeLocation,
+                    droneStatus?.altitude
                 )
+                SignalStrengthWidget(droneStatus?.signalStrength)
             }
             Text(
                 "Touch to control", //fontSize = TextUnit(1F, TextUnitType.Em), modifier = Modifier.width(30.dp))

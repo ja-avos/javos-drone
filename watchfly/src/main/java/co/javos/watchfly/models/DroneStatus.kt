@@ -100,6 +100,15 @@ class DroneStatus(
         jsonObject.addProperty("rotation", rotation)
         jsonObject.addProperty("signalStrength", signalStrength)
         jsonObject.addProperty("gpsSignalStrength", gpsSignalStrength)
+        if (location != null) {
+            jsonObject.addProperty("latitude", location!!.latitude)
+            jsonObject.addProperty("longitude", location!!.longitude)
+        }
+
+        if (homeLocation != null) {
+            jsonObject.addProperty("homeLatitude", homeLocation!!.latitude)
+            jsonObject.addProperty("homeLongitude", homeLocation!!.longitude)
+        }
         return jsonObject
     }
 
@@ -114,6 +123,22 @@ class DroneStatus(
             val signalStrength = jsonObject.get("signalStrength").asInt
             val gpsSignalStrength = jsonObject.get("gpsSignalStrength").asInt
 
+            var location: Location? = null
+
+            if (jsonObject.has("latitude") && jsonObject.has("longitude")) {
+                location = Location("")
+                location.latitude = jsonObject.get("latitude").asDouble
+                location.longitude = jsonObject.get("longitude").asDouble
+            }
+
+            var homeLocation: Location? = null
+
+            if (jsonObject.has("homeLatitude") && jsonObject.has("homeLongitude")) {
+                homeLocation = Location("")
+                homeLocation.latitude = jsonObject.get("homeLatitude").asDouble
+                homeLocation.longitude = jsonObject.get("homeLongitude").asDouble
+            }
+
             return DroneStatus(
                 state = state,
                 battery = battery,
@@ -122,7 +147,9 @@ class DroneStatus(
                 horizontalSpeed = horizontalSpeed,
                 rotation = rotation,
                 signalStrength = signalStrength,
-                gpsSignalStrength = gpsSignalStrength
+                gpsSignalStrength = gpsSignalStrength,
+                location = location,
+                homeLocation = homeLocation
             )
         }
 
