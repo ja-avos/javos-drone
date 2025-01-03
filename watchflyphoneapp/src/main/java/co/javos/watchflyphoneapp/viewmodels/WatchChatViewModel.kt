@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import co.javos.watchflyphoneapp.models.Alert
 import co.javos.watchflyphoneapp.models.AuthorDevice
 import co.javos.watchflyphoneapp.models.Command
 import co.javos.watchflyphoneapp.models.CommandType
@@ -36,11 +37,11 @@ class WatchChatViewModel(
         }
     }
 
-    fun addMessage(message: Message) {
+    fun addMessage(message: Message, type: CommandType = CommandType.STATUS_UPDATE) {
         try {
             watchMessageConnection.sendMessageToWatch(
                 Command(
-                    type = CommandType.STATUS_UPDATE,
+                    type = type,
                     content = message.content
                 )
             )
@@ -48,6 +49,17 @@ class WatchChatViewModel(
         } catch (e: Exception) {
             Log.e("WatchChatViewModel", "Error adding message: ${e.message}")
         }
+    }
+
+    fun addAlert(alert: Alert) {
+        Log.d("WatchChatViewModel", "Adding alert: $alert")
+        val message = Message(
+            content = alert.toString()
+        )
+        addMessage(
+            message,
+            CommandType.ALERT
+        )
     }
 
     fun clearMessages() {
@@ -78,12 +90,34 @@ class WatchChatViewModel(
             when (command.content) {
                 "motors_on" -> {
                     djiController.turnMotorsOn()
-                    djiController.droneStatus
                 }
 
                 "motors_off" -> {
                     djiController.turnMotorsOff()
-                    djiController.droneStatus
+                }
+
+                "take_off" -> {
+                    djiController.takeOff()
+                }
+
+                "land" -> {
+                    djiController.landDrone()
+                }
+
+                "confirm_landing" -> {
+                    djiController.confirmLanding()
+                }
+
+                "cancel_landing" -> {
+                    djiController.cancelLanding()
+                }
+
+                "go_home" -> {
+                    djiController.returnToHome()
+                }
+
+                "stop" -> {
+                    djiController.stopDrone()
                 }
 
                 else -> {

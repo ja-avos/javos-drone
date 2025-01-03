@@ -20,6 +20,7 @@ import co.javos.watchflyphoneapp.repository.WatchMessageConnection
 import co.javos.watchflyphoneapp.ui.screens.MainView
 import co.javos.watchflyphoneapp.ui.screens.WatchChatView
 import co.javos.watchflyphoneapp.ui.theme.JAVOSDroneTheme
+import co.javos.watchflyphoneapp.viewmodels.AlertsViewModel
 import co.javos.watchflyphoneapp.viewmodels.CameraControlsViewModel
 import co.javos.watchflyphoneapp.viewmodels.DroneStatusViewModel
 import co.javos.watchflyphoneapp.viewmodels.JoysticksViewModel
@@ -78,6 +79,9 @@ class MainActivity : ComponentActivity() {
     private val joysticksViewModel: JoysticksViewModel by viewModels {
         JoysticksViewModel.JoysticksViewModelFactory(djiController)
     }
+    private val alertsViewModel: AlertsViewModel by viewModels {
+        AlertsViewModel.AlertsViewModelFactory(djiController, watchChatViewModel)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -107,7 +111,8 @@ class MainActivity : ComponentActivity() {
                     liveFeedViewModel,
                     mapViewModel,
                     cameraControlsViewModel,
-                    joysticksViewModel
+                    joysticksViewModel,
+                    alertsViewModel
                 )
             }
         }
@@ -150,7 +155,8 @@ fun NavigationStack(
     liveFeedViewModel: LiveFeedViewModel,
     mapViewModel: MapViewModel,
     cameraControlsViewModel: CameraControlsViewModel,
-    joysticksViewModel: JoysticksViewModel
+    joysticksViewModel: JoysticksViewModel,
+    alertsViewModel: AlertsViewModel
 ) {
     val navController = rememberNavController()
 
@@ -165,7 +171,8 @@ fun NavigationStack(
                 liveFeedViewModel = liveFeedViewModel,
                 mapViewModel = mapViewModel,
                 cameraControlsViewModel = cameraControlsViewModel,
-                joysticksViewModel = joysticksViewModel
+                joysticksViewModel = joysticksViewModel,
+                alertsViewModel = alertsViewModel
             )
         }
         composable(AppScreens.CHAT.name) {

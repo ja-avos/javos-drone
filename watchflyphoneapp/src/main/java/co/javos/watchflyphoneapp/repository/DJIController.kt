@@ -44,6 +44,9 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
     private val _virtualSticks = MutableStateFlow(VirtualSticks())
     val virtualSticks: MutableStateFlow<VirtualSticks> = _virtualSticks
 
+    private val _diagnostics = MutableStateFlow<List<DJIDiagnostics>>(emptyList())
+    val diagnostics: MutableStateFlow<List<DJIDiagnostics>> = _diagnostics
+
     val isCameraReady: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isDroneConnected: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
@@ -104,24 +107,30 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
     override fun onProductConnect(baseProduct: BaseProduct?) {
         Log.d(TAG, String.format("onProductConnect newProduct:%s", baseProduct))
         _droneStatus.value = _droneStatus.value.toState(DroneState.NO_DRONE)
+        // Register diagnostics callback
+        if (baseProduct?.isConnected == true) {
+            Log.d(TAG, "Adding diagnostics callback")
+            baseProduct.setDiagnosticsInformationCallback {
+                _diagnostics.value = it.toList()
+            }
+        }
     }
 
     override fun onProductChanged(baseProduct: BaseProduct?) {
         Log.d(TAG, String.format("onProductChange newProduct:%s", baseProduct))
+
+        // Register diagnostics callback
+        if (baseProduct?.isConnected == true) {
+            Log.d(TAG, "Adding diagnostics callback")
+            baseProduct.setDiagnosticsInformationCallback {
+                _diagnostics.value = it.toList()
+            }
+        }
+
         if (baseProduct?.isConnected == true && baseProduct is Aircraft) {
             Log.d(TAG, "onProductChanged: connected")
             _droneStatus.value = _droneStatus.value.toState(DroneState.MOTORS_OFF)
-            baseProduct.setDiagnosticsInformationCallback { diagnostics ->
-                Log.d(TAG, "Drone Diagnostics: $diagnostics")
-                for (diagnostic in diagnostics) {
-                    Log.d(TAG, "Drone Diagnostic: $diagnostic")
-                    Log.d(
-                        TAG,
-                        "Drone Diagnostic Level: ${diagnostic.healthInformation?.warningLevel}"
-                    )
-                }
 
-            }
         } else {
             _droneStatus.value = _droneStatus.value.toState(DroneState.NO_DRONE)
         }
@@ -325,7 +334,7 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
     fun returnToHome() {
         Log.d(TAG, "returnToHome: ")
-        if (!isDroneConnected.value) {
+        if (isDroneConnected.value) {
             val flightController = (manager.product as Aircraft?)?.flightController
             flightController?.startGoHome {
                 Log.d(TAG, "returnToHome: ${it?.description ?: "success"}")
@@ -337,7 +346,7 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
     fun takeOff() {
         Log.d(TAG, "takeOff: ")
-        if (!isDroneConnected.value) {
+        if (isDroneConnected.value) {
             _droneStatus.value = _droneStatus.value.toState(DroneState.TAKING_OFF)
             val flightController = (manager.product as Aircraft?)?.flightController
             flightController?.startTakeoff {
@@ -350,7 +359,7 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
     fun landDrone() {
         Log.d(TAG, "landDrone: ")
-        if (!isDroneConnected.value) {
+        if (isDroneConnected.value) {
             val flightController = (manager.product as Aircraft?)?.flightController
             flightController?.startLanding {
                 Log.d(TAG, "landDrone: ${it?.description ?: "success"}")
@@ -362,7 +371,7 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
     fun confirmLanding() {
         Log.d(TAG, "confirmLanding: ")
-        if (!isDroneConnected.value) {
+        if (isDroneConnected.value) {
             val flightController = (manager.product as Aircraft?)?.flightController
             if (flightController?.state?.isLandingConfirmationNeeded == true) {
                 flightController.confirmLanding {
@@ -373,6 +382,22 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
             }
         } else {
             Log.d(TAG, "confirmLanding: Drone not connected")
+        }
+    }
+
+    fun cancelLanding() {
+        Log.d(TAG, "cancelLanding: ")
+        if (isDroneConnected.value) {
+            val flightController = (manager.product as Aircraft?)?.flightController
+            if (flightController?.state?.isLandingConfirmationNeeded == true) {
+                flightController.cancelLanding {
+                    Log.d(TAG, "cancelLanding: ${it?.description ?: "success"}")
+                }
+            } else {
+                Log.d(TAG, "cancelLanding: Landing not needed")
+            }
+        } else {
+            Log.d(TAG, "cancelLanding: Drone not connected")
         }
     }
 

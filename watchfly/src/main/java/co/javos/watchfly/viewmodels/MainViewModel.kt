@@ -1,5 +1,6 @@
 package co.javos.watchfly.viewmodels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import co.javos.watchfly.models.ControlMode
@@ -42,6 +43,16 @@ class MainViewModel(private val phoneMessageConnection: PhoneMessageConnection) 
     fun land() {
         CoroutineScope(Dispatchers.IO).launch {
             phoneMessageConnection.sendCommand("land")
+        }
+    }
+
+    fun confirmLanding(confirm: Boolean) {
+        Log.d("MainViewModel", "confirmLanding: $confirm")
+        CoroutineScope(Dispatchers.IO).launch {
+            if (confirm)
+                phoneMessageConnection.sendCommand("confirm_landing")
+            else
+                phoneMessageConnection.sendCommand("cancel_landing")
         }
     }
 

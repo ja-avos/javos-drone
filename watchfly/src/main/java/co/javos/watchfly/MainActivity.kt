@@ -52,6 +52,7 @@ import co.javos.watchfly.presentation.theme.JAVOSDroneTheme
 import co.javos.watchfly.repository.PhoneMessageConnection
 import co.javos.watchfly.ui.screens.AltitudeControlView
 import co.javos.watchfly.ui.screens.ConnectingView
+import co.javos.watchfly.ui.screens.DialogView
 import co.javos.watchfly.ui.screens.LandedView
 import co.javos.watchfly.ui.screens.MainView
 import co.javos.watchfly.ui.screens.PYControlView
@@ -73,7 +74,7 @@ class MainActivity : ComponentActivity() {
     /// Repositories
     private val phoneMessageConnection by lazy {
         PhoneMessageConnection(
-            dataClient, messageClient, capabilityClient
+            dataClient, messageClient, capabilityClient, this
         )
     }
 
@@ -113,7 +114,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun showToast(toastMsg: String) {
+    fun showToast(toastMsg: String) {
         val handler = Handler(Looper.getMainLooper())
         handler.post { Toast.makeText(applicationContext, toastMsg, Toast.LENGTH_LONG).show() }
     }
@@ -208,13 +209,22 @@ fun WatchFlyApp(
         if (!droneStatus.isDroneConnected() || !droneStatusVM.isPhoneConnected.collectAsState().value)
             ConnectingView(droneStatusVM)
         else
-            if (false && droneStatus.state in listOf(
+            if (droneStatus.state in listOf(
                     DroneState.MOTORS_OFF,
                     DroneState.MOTORS_ON,
                     DroneState.TAKING_OFF
                 )
             )
                 LandedView(mainVM)
+            else if (droneStatus.state in listOf(
+                DroneState.CONFIRM_LANDING
+            ))
+                DialogView(
+                    title = "Landing drone",
+                    text = "Confirm drone landing?",
+                    onCancel = { mainVM.confirmLanding(false) },
+                    onConfirm = { mainVM.confirmLanding(true) }
+                )
             else
                 Box(
                     modifier = Modifier

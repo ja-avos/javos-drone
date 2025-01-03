@@ -26,11 +26,12 @@ import co.javos.watchflyphoneapp.R
 import co.javos.watchflyphoneapp.models.Alert
 import co.javos.watchflyphoneapp.models.AlertType
 import co.javos.watchflyphoneapp.models.DroneState
-import co.javos.watchflyphoneapp.ui.widgets.AlertPopupWidget
+import co.javos.watchflyphoneapp.ui.widgets.AlertsPopup
 import co.javos.watchflyphoneapp.ui.widgets.DroneStatusWidget
 import co.javos.watchflyphoneapp.ui.widgets.JoysticksWidget
 import co.javos.watchflyphoneapp.ui.widgets.ScreenPreviewWidget
 import co.javos.watchflyphoneapp.ui.widgets.WatchChatWidget
+import co.javos.watchflyphoneapp.viewmodels.AlertsViewModel
 import co.javos.watchflyphoneapp.viewmodels.CameraControlsViewModel
 import co.javos.watchflyphoneapp.viewmodels.DroneStatusViewModel
 import co.javos.watchflyphoneapp.viewmodels.JoysticksViewModel
@@ -50,7 +51,8 @@ class MainView {
         liveFeedViewModel: LiveFeedViewModel? = null,
         mapViewModel: MapViewModel? = null,
         cameraControlsViewModel: CameraControlsViewModel? = null,
-        joysticksViewModel: JoysticksViewModel? = null
+        joysticksViewModel: JoysticksViewModel? = null,
+        alertsViewModel: AlertsViewModel? = null
     ) {
         val dronePhotos = listOf(
             R.drawable.drone_bacata,
@@ -74,12 +76,8 @@ class MainView {
                 vibratorManager?.vibrate(
                     CombinedVibration.createParallel(vibrateEffect)
                 )
-                AlertPopupWidget().AlertPopup(
-                    Alert(
-                        AlertType.WARNING,
-                        "Warning",
-                        "lorem ipsum dolor sit amet".repeat(15)
-                    ),
+                AlertsPopup(
+                    alertsViewModel,
                     onDismiss = { showAlert.value = false }
                 )
             }
@@ -145,13 +143,13 @@ class MainView {
                     horizontalAlignment = Alignment.End
                 ) {
                     CameraControlView().ActionsWidget(
-                        status = droneStatus,
                         showMapActions = showMap.value,
-                        onTakePhoto = {
-                            showAlert.value = true
-                        },
                         mapViewModel = mapViewModel,
-                        cameraControlsViewModel = cameraControlsViewModel
+                        cameraControlsViewModel = cameraControlsViewModel,
+                        alertsViewModel = alertsViewModel,
+                        diagnosticsOnClick = {
+                            showAlert.value = true
+                        }
                     )
                 }
             }

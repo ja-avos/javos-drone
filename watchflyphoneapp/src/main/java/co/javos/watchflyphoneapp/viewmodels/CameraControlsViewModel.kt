@@ -21,6 +21,10 @@ class CameraControlsViewModel(private val djiController: DJIController): ViewMod
         djiController.takePhoto()
     }
 
+    fun openAlerts() {
+
+    }
+
     class CameraControlsViewModelFactory(private val djiController: DJIController) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(CameraControlsViewModel::class.java)) {

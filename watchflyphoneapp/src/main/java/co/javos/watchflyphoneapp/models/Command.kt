@@ -5,6 +5,7 @@ import com.google.gson.JsonParser
 
 enum class CommandType {
     ACTION,
+    ALERT,
     STATUS_UPDATE
 }
 

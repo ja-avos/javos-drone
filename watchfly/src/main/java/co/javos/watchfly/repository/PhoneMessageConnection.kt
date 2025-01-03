@@ -1,6 +1,7 @@
 package co.javos.watchfly.repository
 
 import android.util.Log
+import co.javos.watchfly.MainActivity
 import co.javos.watchfly.models.Command
 import co.javos.watchfly.models.CommandType
 import co.javos.watchfly.models.DroneState
@@ -20,7 +21,8 @@ import kotlinx.coroutines.launch
 class PhoneMessageConnection(
     private val dataClient: DataClient,
     private val messageClient: MessageClient,
-    private val capabilityClient: CapabilityClient
+    private val capabilityClient: CapabilityClient,
+    private val mainActivity: MainActivity?
 ) : DataClient.OnDataChangedListener,
     MessageClient.OnMessageReceivedListener,
     CapabilityClient.OnCapabilityChangedListener {
@@ -37,14 +39,26 @@ class PhoneMessageConnection(
 
     private fun processCommand(command: Command) {
         Log.d(TAG, "processCommand: $command")
-        if (command.type == CommandType.STATUS_UPDATE) {
-            try {
-                val droneStatus = DroneStatus.fromString(command.content)
-                _droneStatus.value = droneStatus
-            } catch (e: Exception) {
-                Log.e(TAG, "processCommand: ${e.message}")
+        when (command.type) {
+            CommandType.STATUS_UPDATE -> {
+                try {
+                    val droneStatus = DroneStatus.fromString(command.content)
+                    _droneStatus.value = droneStatus
+                } catch (e: Exception) {
+                    Log.e(TAG, "processCommand: ${e.message}")
+                }
+            }
+
+            CommandType.ALERT -> {
+                mainActivity?.showToast("New Alert!!! Check phone app")
+            }
+
+            else -> {
+                Log.d(TAG, "processCommand: Unknown command type: ${command.type}")
             }
         }
+
+
     }
 
     override fun onDataChanged(p0: DataEventBuffer) {
@@ -146,6 +160,23 @@ class PhoneMessageConnection(
                 ))
                 _droneStatus.value = _droneStatus.value.copy(state = DroneState.FLYING)
             }
+
+            "confirm_landing" -> {
+                sendMessage(Command(
+                    CommandType.ACTION,
+                    "confirm_landing"
+                ))
+                _droneStatus.value = _droneStatus.value.copy(state = DroneState.MOTORS_OFF)
+            }
+
+            "cancel_landing" -> {
+                sendMessage(Command(
+                    CommandType.ACTION,
+                    "cancel_landing"
+                ))
+                _droneStatus.value = _droneStatus.value.copy(state = DroneState.FLYING)
+            }
+
 
             else -> {
                 Log.d("MainActivity", "Unknown command: $command")
