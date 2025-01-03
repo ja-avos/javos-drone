@@ -15,6 +15,10 @@ import dji.common.error.DJIError
 import dji.common.error.DJISDKError
 import dji.common.flightcontroller.FlightControllerState
 import dji.common.flightcontroller.virtualstick.FlightControlData
+import dji.common.flightcontroller.virtualstick.FlightCoordinateSystem
+import dji.common.flightcontroller.virtualstick.RollPitchControlMode
+import dji.common.flightcontroller.virtualstick.VerticalControlMode
+import dji.common.flightcontroller.virtualstick.YawControlMode
 import dji.common.healthmanager.WarningLevel
 import dji.sdk.airlink.AirLink
 import dji.sdk.base.BaseComponent
@@ -420,13 +424,58 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
     }
 
-//    fun changeVirtualSticks() {
-//
-//        val flightControlData = FlightControlData()
-//
-//        (manager.product as Aircraft?)?.flightController?.sendVirtualStickFlightControlData() {
-//
-//        }
-//    }
+    // Param velocity must be a number between -1 and 1
+    fun changeAltitude(velocity: Float) {
+        // According to DJI SDK docs, the maximum velocity is (+/-) 4m/s
+        val MAX_VELOCITY = 4F
+        if (velocity > 1 || velocity < -1) {
+            Log.d(TAG, "changeAltitude: velocity must be between -1 and 1")
+            return
+        }
+        val controller = (manager.product as Aircraft?)?.flightController
+        controller?.verticalControlMode = VerticalControlMode.VELOCITY
+        val controlData = FlightControlData(
+            0F,
+            0F,
+            0F,
+            velocity * MAX_VELOCITY
+        )
+        controller?.sendVirtualStickFlightControlData(controlData) {
+            Log.d(TAG, "changeAltitude: ${it?.description ?: "success"}")
+        }
+    }
+
+    // Each param must be a number between -1 and 1
+    fun changeRPY(roll: Float, pitch: Float, yaw: Float) {
+
+        if (roll > 1 || roll < -1 || pitch > 1 || pitch < -1 || yaw > 1 || yaw < -1) {
+            Log.d(TAG, "changeRPY: params must be between -1 and 1")
+            return
+        }
+        val controller = (manager.product as Aircraft?)?.flightController
+
+        if (controller == null) {
+            Log.d(TAG, "changeRPY: controller is null")
+            return
+        }
+
+        val MAX_ROLL_PITCH_ANGLE = 30F
+        val MAX_YAW_ANGLE = 180F
+
+        controller.yawControlMode = YawControlMode.ANGLE
+        controller.rollPitchControlMode = RollPitchControlMode.ANGLE
+        controller.rollPitchCoordinateSystem = FlightCoordinateSystem.BODY
+
+        val controlData = FlightControlData(
+            pitch * MAX_ROLL_PITCH_ANGLE,
+            roll * MAX_ROLL_PITCH_ANGLE,
+            yaw * MAX_YAW_ANGLE,
+            0F
+        )
+
+        controller.sendVirtualStickFlightControlData(controlData) {
+            Log.d(TAG, "changeRPY: ${it?.description ?: "success"}")
+        }
+    }
 
 }
