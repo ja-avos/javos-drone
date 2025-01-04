@@ -30,6 +30,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -44,6 +47,8 @@ import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.wear.compose.material3.ButtonDefaults
 import co.javos.watchfly.models.ControlMode
@@ -156,13 +161,14 @@ fun WatchFlyApp(
 ) {
     val fullscreen = remember { mutableStateOf(false) }
     val sensorsData = remember { mutableStateOf(List(3) { 0.0 }) }
+    var screenSize = IntSize.Zero
 
-    val controlMode = mainVM.controlMode.collectAsState().value
+    val controlModeState = mainVM.controlMode.collectAsState()
+    val controlMode = controlModeState.value
     val droneStatus = droneStatusVM.droneStatus.collectAsState().value
 
     val cursorOffset = remember { mutableStateOf(Offset.Zero) }
-
-    val sensorManager = mainActivity?.getSystemService(Context.SENSOR_SERVICE) as SensorManager?
+    var sensorManager = mainActivity?.getSystemService(Context.SENSOR_SERVICE) as SensorManager?
 
     // Add flag to keep screen awake
     mainActivity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -170,33 +176,28 @@ fun WatchFlyApp(
     val sensorType = Sensor.TYPE_GAME_ROTATION_VECTOR
     val sensors = sensorManager?.getSensorList(sensorType)
 
-    val listener = object : SensorEventListener {
-        override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-            // Accuracy events do not matter
-        }
+    val listener = remember { SensorDataListener(
+        controlModeState,
+        fullscreen,
+        sensorsData,
+        cursorOffset,
+        screenSize,
+        rpyControlVM,
+        sensorType
+    ) }
 
-        override fun onSensorChanged(event: SensorEvent) {
-            //just set the values to a textview so they can be displayed.
-            if (event.sensor.type == sensorType) {
-                sensorsData.value = event.values.toList().map { num -> num.toDouble() }
-                if (controlMode == ControlMode.RPY && fullscreen.value) {
-                    cursorOffset.value = Offset(
-                        event.values[1] * 200,
-                        event.values[0] * 200
-                    )
-                }
-            }
-        }
-    }
-
-    if (fullscreen.value && controlMode == ControlMode.RPY)
+    if (fullscreen.value && controlModeState.value == ControlMode.RPY) {
+        sensorManager = mainActivity?.getSystemService(Context.SENSOR_SERVICE) as SensorManager?
         sensorManager?.registerListener(
             listener,
             sensors?.get(0),
             SensorManager.SENSOR_DELAY_GAME
         )
-    else
-        sensorManager?.unregisterListener(listener)
+    } else {
+        Log.d("MainActivity", "onSensorChanged: unregistering... $listener")
+        sensorManager?.unregisterListener(listener, sensors?.get(0))
+    }
+
 
     var altitudeCursorModifier = Modifier.offset(28.dp, 0.dp)
 
@@ -217,8 +218,9 @@ fun WatchFlyApp(
             )
                 LandedView(mainVM)
             else if (droneStatus.state in listOf(
-                DroneState.CONFIRM_LANDING
-            ))
+                    DroneState.CONFIRM_LANDING
+                )
+            )
                 DialogView(
                     title = "Landing drone",
                     text = "Confirm drone landing?",
@@ -229,7 +231,10 @@ fun WatchFlyApp(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background),
+                        .background(MaterialTheme.colorScheme.background)
+                        .onSizeChanged {
+                            screenSize = it
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     if (!fullscreen.value) {
@@ -237,7 +242,7 @@ fun WatchFlyApp(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            when (controlMode) {
+                            when (controlModeState.value) {
                                 ControlMode.ALTITUDE -> AltitudeControlView(cursorOffset.value)
                                 else -> Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -249,7 +254,7 @@ fun WatchFlyApp(
                             //  Altitude control button
                             Button(
                                 onClick = {},
-                                enabled = droneStatus.state == DroneState.FLYING || controlMode == ControlMode.ALTITUDE,
+                                enabled = droneStatus.state == DroneState.FLYING || controlModeState.value == ControlMode.ALTITUDE,
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color.Magenta
                                 ),
@@ -269,10 +274,16 @@ fun WatchFlyApp(
                                                 dragAmount.x / 2,
                                                 dragAmount.y / 2
                                             )
+                                            altitudeVM.sendAltitudeVelocity(
+                                                cursorOffset.value.y.coerceIn(
+                                                    -100F,
+                                                    100F
+                                                ) / 100 * -1
+                                            )
                                         }
                                     }
                                     .pointerInteropFilter {
-                                        if (droneStatus.state == DroneState.FLYING || controlMode == ControlMode.ALTITUDE) {
+                                        if (droneStatus.state == DroneState.FLYING || controlModeState.value == ControlMode.ALTITUDE) {
                                             when (it.action) {
                                                 MotionEvent.ACTION_DOWN -> {
                                                     mainVM.changeControlMode(ControlMode.ALTITUDE)
@@ -281,6 +292,7 @@ fun WatchFlyApp(
 
                                                 MotionEvent.ACTION_UP -> {
                                                     mainVM.changeControlMode(ControlMode.PY)
+                                                    altitudeVM.sendAltitudeVelocity(0F)
                                                     true
                                                 }
 
@@ -294,7 +306,7 @@ fun WatchFlyApp(
 
                             }
                         }
-                    } else if (controlMode == ControlMode.RPY) {
+                    } else if (controlModeState.value == ControlMode.RPY) {
                         RPYControlView(
                             sensorsData.value[0],
                             sensorsData.value[1],
@@ -303,14 +315,14 @@ fun WatchFlyApp(
                     } else {
                         PYControlView(fullscreen)
                     }
-                    if (controlMode != ControlMode.ALTITUDE)
+                    if (controlModeState.value != ControlMode.ALTITUDE)
                     // Central control button (PY/RPY)
                         Button(
                             enabled = droneStatus.state == DroneState.FLYING,
                             onClick = {},
                             colors = ButtonDefaults.buttonColors(
                                 containerColor =
-                                if (controlMode == ControlMode.RPY)
+                                if (controlModeState.value == ControlMode.RPY)
                                     Color.Green
                                 else
                                     Color.Blue
@@ -324,11 +336,22 @@ fun WatchFlyApp(
                                         fullscreen.value = false
                                         cursorOffset.value = Offset.Zero
                                     }) { change, dragAmount ->
-                                        if (controlMode == ControlMode.PY) {
+                                        Log.d("MainActivity", "onDragCenterButton. ControlMode = $controlMode")
+                                        if (controlModeState.value == ControlMode.PY) {
                                             change.consume()
                                             cursorOffset.value += Offset(
                                                 dragAmount.x / 2,
                                                 dragAmount.y / 2
+                                            )
+                                            pyControlVM.sendPY(
+                                                cursorOffset.value.x.coerceIn(
+                                                    -100F,
+                                                    100F
+                                                ) / 100,
+                                                cursorOffset.value.y.coerceIn(
+                                                    -100F,
+                                                    100F
+                                                ) / 100 * -1
                                             )
                                         }
                                     }
@@ -344,6 +367,15 @@ fun WatchFlyApp(
                                             MotionEvent.ACTION_UP -> {
                                                 fullscreen.value = false
                                                 cursorOffset.value = Offset.Zero
+                                                pyControlVM.sendPY(
+                                                    0F,
+                                                    0F
+                                                )
+                                                rpyControlVM.sendRPY(
+                                                    0F,
+                                                    0F,
+                                                    0F
+                                                )
                                                 true
                                             }
 
@@ -356,5 +388,44 @@ fun WatchFlyApp(
                         ) {
                         }
                 }
+    }
+}
+
+class SensorDataListener(
+    private val controlMode: State<ControlMode>,
+    private val fullscreen: MutableState<Boolean>,
+    private val sensorsData: MutableState<List<Double>>,
+    private val cursorOffset: MutableState<Offset>,
+    private val screenSize: IntSize,
+    private val rpyControlVM: RPYControlViewModel,
+    private val sensorType: Int
+) : SensorEventListener {
+    override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
+        // Accuracy events do not matter
+    }
+
+    override fun onSensorChanged(event: SensorEvent) {
+        //just set the values to a textview so they can be displayed.
+        if (event.sensor.type == sensorType) {
+            sensorsData.value = event.values.toList().map { num -> num.toDouble() }
+            if (controlMode.value == ControlMode.RPY && fullscreen.value) {
+                cursorOffset.value = Offset(
+                    event.values[1] * 200,
+                    event.values[0] * 200
+                )
+                // Sends the RPY values to the drone
+                rpyControlVM.sendRPY(
+                    cursorOffset.value.x.coerceIn(
+                        -100F,
+                        100F
+                    ) / 100,
+                    cursorOffset.value.y.coerceIn(
+                        -100F,
+                        100F
+                    ) / 100 * -1,
+                    event.values[2]
+                )
+            }
+        }
     }
 }

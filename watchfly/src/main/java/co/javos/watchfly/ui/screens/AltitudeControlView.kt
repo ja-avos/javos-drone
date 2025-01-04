@@ -69,7 +69,7 @@ fun AltitudeControlView(cursorOffset: Offset = Offset.Zero) {
                     Modifier
                         .fillMaxSize()
                         .weight(1F)
-                        .background(color = if (ascending.value > 0) Color.Magenta.copy(alpha = 0.1F) else Color.Transparent),
+                        .background(color = if (ascending.intValue > 0) Color.Magenta.copy(alpha = 0.1F) else Color.Transparent),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -82,7 +82,7 @@ fun AltitudeControlView(cursorOffset: Offset = Offset.Zero) {
                     Modifier
                         .fillMaxSize()
                         .weight(1F)
-                        .background(color = if (ascending.value < 0) Color.Magenta.copy(alpha = 0.1F) else Color.Transparent),
+                        .background(color = if (ascending.intValue < 0) Color.Magenta.copy(alpha = 0.1F) else Color.Transparent),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

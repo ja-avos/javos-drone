@@ -29,6 +29,7 @@ class MainViewModel(private val phoneMessageConnection: PhoneMessageConnection) 
     }
 
     fun togglePYRPYControlMode() {
+
         _controlMode.value =
             if (_controlMode.value == ControlMode.RPY) ControlMode.PY else ControlMode.RPY
 
