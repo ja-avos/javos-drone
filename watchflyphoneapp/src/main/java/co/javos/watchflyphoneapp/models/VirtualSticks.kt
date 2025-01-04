@@ -7,11 +7,11 @@ enum class RemoteType {
 
 data class VirtualSticks(
     var type: RemoteType = RemoteType.REMOTE_CONTROLLER,
-    var right: Stick = Stick(0,0),
-    var left: Stick = Stick(0,0)
+    var right: Stick = Stick(0F,0F),
+    var left: Stick = Stick(0F,0F)
 )
 
 data class Stick(
-    val x: Int,
-    val y: Int
+    val x: Float,
+    val y: Float
 )

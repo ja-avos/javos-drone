@@ -14,6 +14,8 @@ import co.javos.watchflyphoneapp.repository.DJIController
 import co.javos.watchflyphoneapp.repository.WatchMessageConnection
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
+import dji.common.flightcontroller.virtualstick.FlightControlData
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class WatchChatViewModel(
@@ -22,6 +24,9 @@ class WatchChatViewModel(
 ) : ViewModel(), MessageClient.OnMessageReceivedListener {
     private val _messages = mutableStateListOf<Message>()
     val messages: MutableList<Message> = _messages
+
+    private val _virtualFlightControlData = MutableStateFlow(FlightControlData(0F, 0F, 0F, 0F))
+    val virtualFlightControlData: MutableStateFlow<FlightControlData> = _virtualFlightControlData
 
     init {
         viewModelScope.launch {
@@ -87,7 +92,7 @@ class WatchChatViewModel(
 
     private fun processCommand(command: Command) {
         if (command.type == CommandType.ACTION) {
-            when (command.content) {
+            when (command.content.split(" ").first()) {
                 "motors_on" -> {
                     djiController.turnMotorsOn()
                 }
@@ -120,6 +125,67 @@ class WatchChatViewModel(
                     djiController.stopDrone()
                 }
 
+                "move_rpy" -> {
+                    val args = command.content.split(" ")
+                    if (args.size == 4) {
+                        val x = args[1].toFloatOrNull()
+                        val y = args[2].toFloatOrNull()
+                        val z = args[3].toFloatOrNull()
+                        Log.d("WatchChatViewModel", "Decoded RPY: $x, $y, $z")
+                        if (x != null && y != null && z != null) {
+                            Log.d("WatchChatViewModel", "Moving RPY: $x, $y, $z")
+                            _virtualFlightControlData.value =
+                                djiController.changeRPY(x, y, z) ?: FlightControlData(
+                                    0F,
+                                    0F,
+                                    0F,
+                                    0F
+                                )
+                        } else {
+                            Log.e("WatchChatViewModel", "Invalid arguments for move_rpy command")
+                        }
+                    } else {
+                        Log.e("WatchChatViewModel", "Invalid arguments for move_rpy command")
+                    }
+                }
+
+                "move_py" -> {
+                    val args = command.content.split(" ")
+                    if (args.size == 3) {
+                        val x = args[1].toFloatOrNull()
+                        val y = args[2].toFloatOrNull()
+                        if (x != null && y != null) {
+                            _virtualFlightControlData.value =
+                                djiController.changeRPY(0F, x, y) ?: FlightControlData(
+                                    0F,
+                                    0F,
+                                    0F,
+                                    0F
+                                )
+                        }
+                        else {
+                            Log.e("WatchChatViewModel", "Invalid arguments for move_py command")
+                        }
+                    } else {
+                        Log.e("WatchChatViewModel", "Invalid arguments for move_py command")
+                    }
+                }
+
+                "move_altitude" -> {
+                    val args = command.content.split(" ")
+                    if (args.size == 2) {
+                        val z = args[1].toFloatOrNull()
+                        if (z != null) {
+                            _virtualFlightControlData.value = djiController.changeAltitude(z) ?: FlightControlData(0F, 0F, 0F, 0F)
+                        }
+                        else {
+                            Log.e("WatchChatViewModel", "Invalid arguments for move_altitude command")
+                        }
+                    } else {
+                        Log.e("WatchChatViewModel", "Invalid arguments for move_altitude command")
+                    }
+                }
+
                 else -> {
                     Log.d("WatchChatViewModel", "Unknown command: ${command.content}")
                 }
@@ -143,10 +209,14 @@ class WatchChatViewModel(
 
     override fun onMessageReceived(event: MessageEvent) {
         val message = String(event.data)
+        var addMessage = true
         Log.d("WatchChatViewModel", "Received message: ${message}")
         try {
             val receivedCommand = Command.fromString(message)
             processCommand(receivedCommand)
+            if (receivedCommand.type == CommandType.ACTION) {
+                addMessage = false
+            }
             Log.d("WatchChatViewModel", "Received command: $receivedCommand")
         } catch (e: Exception) {
             Log.e("WatchChatViewModel", "Error sending message: ${e.message}")
@@ -154,6 +224,7 @@ class WatchChatViewModel(
         val newMessage = Message(
             content = message, author = AuthorDevice.WATCH
         )
-        addMessage(newMessage)
+        if (addMessage)
+            addMessage(newMessage)
     }
 }

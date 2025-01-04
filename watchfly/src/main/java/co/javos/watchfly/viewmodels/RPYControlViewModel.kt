@@ -4,12 +4,19 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import co.javos.watchfly.repository.PhoneMessageConnection
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class RPYControlViewModel(private val phoneMessageConnection: PhoneMessageConnection) : ViewModel() {
 
     fun sendRPY(x: Float, y: Float, z: Float) {
-//        phoneMessageConnection.sendRPY(x, y, z)
-        Log.d("RPYControlViewModel", "RPY: $x, $y, $z")
+        CoroutineScope(Dispatchers.IO).launch {
+            phoneMessageConnection.sendCommand(
+                "move_rpy",
+                listOf(x.toString(), y.toString(), z.toString())
+            )
+        }
     }
 
     class RPYControlViewModelFactory(private val phoneMessageConnection: PhoneMessageConnection) : ViewModelProvider.Factory {

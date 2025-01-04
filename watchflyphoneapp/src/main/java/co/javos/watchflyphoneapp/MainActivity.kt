@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
         CameraControlsViewModel.CameraControlsViewModelFactory(djiController)
     }
     private val joysticksViewModel: JoysticksViewModel by viewModels {
-        JoysticksViewModel.JoysticksViewModelFactory(djiController)
+        JoysticksViewModel.JoysticksViewModelFactory(djiController, watchChatViewModel)
     }
     private val alertsViewModel: AlertsViewModel by viewModels {
         AlertsViewModel.AlertsViewModelFactory(djiController, watchChatViewModel)

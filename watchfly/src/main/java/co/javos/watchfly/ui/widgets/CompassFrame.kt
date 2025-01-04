@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CompassFrame(angle: Double = 0.0) {
+fun CompassFrame(angle: Float = 0F) {
     val textMeasurer = rememberTextMeasurer()
     val cardinalityStyle = TextStyle(
         color = Color.White,

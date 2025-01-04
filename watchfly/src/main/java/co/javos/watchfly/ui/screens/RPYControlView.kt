@@ -23,7 +23,7 @@ import co.javos.watchfly.ui.widgets.CompassFrame
 
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
-fun RPYControlView(x: Double = 0.0, y: Double = 0.0, z: Double = 0.0) {
+fun RPYControlView(x: Float = 0F, y: Float = 0F, z: Float = 0F) {
 
     Box {
         CompassFrame(z)

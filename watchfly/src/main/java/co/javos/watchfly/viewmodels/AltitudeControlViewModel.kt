@@ -4,14 +4,21 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import co.javos.watchfly.repository.PhoneMessageConnection
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AltitudeControlViewModel(private val phoneMessageConnection: PhoneMessageConnection) :
     ViewModel() {
 
-        fun sendAltitudeVelocity(altitude: Float) {
-            Log.d("AltitudeControlViewModel", "Sending altitude velocity: $altitude")
-//            phoneMessageConnection.sendAltitudeVelocity(altitude)
+    val droneStatus = phoneMessageConnection.droneStatus
+
+    fun sendAltitudeVelocity(altitude: Float) {
+        CoroutineScope(Dispatchers.IO).launch {
+            phoneMessageConnection.sendCommand("move_altitude", listOf(altitude.toString()))
         }
+
+    }
 
     class AltitudeControlViewModelFactory(private val phoneMessageConnection: PhoneMessageConnection) :
         ViewModelProvider.Factory {

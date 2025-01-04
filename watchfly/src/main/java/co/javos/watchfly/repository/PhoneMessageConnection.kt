@@ -97,86 +97,128 @@ class PhoneMessageConnection(
         }
     }
 
-    suspend fun sendCommand(command: String) {
+    suspend fun sendCommand(command: String, args: List<String> = emptyList()) {
         when (command) {
             "motors_on" -> {
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.MOTORS_ON)
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "motors_on"
-                ))
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "motors_on"
+                    )
+                )
             }
 
             "motors_off" -> {
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.MOTORS_OFF)
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "motors_off"
-                ))
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "motors_off"
+                    )
+                )
             }
 
             "flying" -> {
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.FLYING)
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "flying"
-                ))
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "flying"
+                    )
+                )
             }
 
             "land" -> {
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.LANDING)
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "land"
-                ))
-                delay(1000)
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.MOTORS_OFF)
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "land"
+                    )
+                )
             }
 
             "take_off" -> {
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.TAKING_OFF)
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "take_off"
-                ))
-                delay(1000)
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.FLYING)
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "take_off"
+                    )
+                )
             }
 
             "rth" -> {
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.GOING_HOME)
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "go_home"
-                ))
-                delay(1000)
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.MOTORS_OFF)
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "go_home"
+                    )
+                )
             }
 
             "stop" -> {
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "stop"
-                ))
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.FLYING)
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "stop"
+                    )
+                )
             }
 
             "confirm_landing" -> {
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "confirm_landing"
-                ))
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.MOTORS_OFF)
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "confirm_landing"
+                    )
+                )
             }
 
             "cancel_landing" -> {
-                sendMessage(Command(
-                    CommandType.ACTION,
-                    "cancel_landing"
-                ))
-                _droneStatus.value = _droneStatus.value.copy(state = DroneState.FLYING)
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "cancel_landing"
+                    )
+                )
             }
 
+            "move_rpy" -> {
+
+                if (args.size != 3) {
+                    Log.e("PhoneMessageConnection", "Invalid number of arguments for move_rpy command")
+                    return
+                }
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "move_rpy ${args[0]} ${args[1]} ${args[2]}"
+                    )
+                )
+            }
+
+            "move_py" -> {
+                if (args.size != 2) {
+                    Log.e("PhoneMessageConnection", "Invalid number of arguments for move_py command")
+                    return
+                }
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "move_py ${args[0]} ${args[1]}"
+                    )
+                )
+            }
+
+            "move_altitude" -> {
+                if (args.size != 1) {
+                    Log.e("PhoneMessageConnection", "Invalid number of arguments for move_altitude command")
+                    return
+                }
+                sendMessage(
+                    Command(
+                        CommandType.ACTION,
+                        "move_altitude ${args[0]}"
+                    )
+                )
+            }
 
             else -> {
                 Log.d("MainActivity", "Unknown command: $command")

@@ -4,14 +4,19 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import co.javos.watchfly.repository.PhoneMessageConnection
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class PYControlViewModel(private val phoneMessageConnection: PhoneMessageConnection) : ViewModel() {
 
     fun sendPY(x: Float, y: Float) {
-        val message = "PY $x $y"
-//        phoneMessageConnection.sendMessage(message)
-
-        Log.d("PYControlViewModel", "Sending PY message: $message")
+        CoroutineScope(Dispatchers.IO).launch {
+            phoneMessageConnection.sendCommand(
+                "move_py",
+                listOf(y.toString(), x.toString())
+            )
+        }
     }
     class PYControlViewModelFactory(private val phoneMessageConnection: PhoneMessageConnection) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {

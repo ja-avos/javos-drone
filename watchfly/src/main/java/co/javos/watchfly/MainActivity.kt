@@ -160,8 +160,7 @@ fun WatchFlyApp(
     rpyControlVM: RPYControlViewModel = viewModel()
 ) {
     val fullscreen = remember { mutableStateOf(false) }
-    val sensorsData = remember { mutableStateOf(List(3) { 0.0 }) }
-    var screenSize = IntSize.Zero
+    val sensorsData = remember { mutableStateOf(FloatArray(3)) }
 
     val controlModeState = mainVM.controlMode.collectAsState()
     val controlMode = controlModeState.value
@@ -181,7 +180,6 @@ fun WatchFlyApp(
         fullscreen,
         sensorsData,
         cursorOffset,
-        screenSize,
         rpyControlVM,
         sensorType
     ) }
@@ -191,11 +189,12 @@ fun WatchFlyApp(
         sensorManager?.registerListener(
             listener,
             sensors?.get(0),
-            SensorManager.SENSOR_DELAY_GAME
+            SensorManager.SENSOR_DELAY_NORMAL
         )
     } else {
         Log.d("MainActivity", "onSensorChanged: unregistering... $listener")
         sensorManager?.unregisterListener(listener, sensors?.get(0))
+        listener.reset()
     }
 
 
@@ -231,10 +230,7 @@ fun WatchFlyApp(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                        .onSizeChanged {
-                            screenSize = it
-                        },
+                        .background(MaterialTheme.colorScheme.background),
                     contentAlignment = Alignment.Center
                 ) {
                     if (!fullscreen.value) {
@@ -243,7 +239,7 @@ fun WatchFlyApp(
                             contentAlignment = Alignment.Center
                         ) {
                             when (controlModeState.value) {
-                                ControlMode.ALTITUDE -> AltitudeControlView(cursorOffset.value)
+                                ControlMode.ALTITUDE -> AltitudeControlView(altitudeVM, cursorOffset.value)
                                 else -> Box(
                                     modifier = Modifier.fillMaxSize(),
                                     contentAlignment = Alignment.Center
@@ -268,6 +264,7 @@ fun WatchFlyApp(
                                         detectDragGestures(onDragEnd = {
                                             cursorOffset.value = Offset.Zero
                                             mainVM.changeControlMode(ControlMode.PY)
+                                            altitudeVM.sendAltitudeVelocity(0F)
                                         }) { change, dragAmount ->
                                             change.consume()
                                             cursorOffset.value += Offset(
@@ -335,8 +332,20 @@ fun WatchFlyApp(
                                     detectDragGestures(onDragEnd = {
                                         fullscreen.value = false
                                         cursorOffset.value = Offset.Zero
+                                        pyControlVM.sendPY(
+                                            0F,
+                                            0F
+                                        )
+                                        rpyControlVM.sendRPY(
+                                            0F,
+                                            0F,
+                                            0F
+                                        )
                                     }) { change, dragAmount ->
-                                        Log.d("MainActivity", "onDragCenterButton. ControlMode = $controlMode")
+                                        Log.d(
+                                            "MainActivity",
+                                            "onDragCenterButton. ControlMode = $controlMode"
+                                        )
                                         if (controlModeState.value == ControlMode.PY) {
                                             change.consume()
                                             cursorOffset.value += Offset(
@@ -394,12 +403,14 @@ fun WatchFlyApp(
 class SensorDataListener(
     private val controlMode: State<ControlMode>,
     private val fullscreen: MutableState<Boolean>,
-    private val sensorsData: MutableState<List<Double>>,
+    private val sensorsData: MutableState<FloatArray>,
     private val cursorOffset: MutableState<Offset>,
-    private val screenSize: IntSize,
     private val rpyControlVM: RPYControlViewModel,
     private val sensorType: Int
 ) : SensorEventListener {
+
+    private var initialOffset: FloatArray? = null
+
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
         // Accuracy events do not matter
     }
@@ -407,11 +418,26 @@ class SensorDataListener(
     override fun onSensorChanged(event: SensorEvent) {
         //just set the values to a textview so they can be displayed.
         if (event.sensor.type == sensorType) {
-            sensorsData.value = event.values.toList().map { num -> num.toDouble() }
+
+            if (initialOffset == null) {
+                Log.d("MainActivity", "onSensorChanged: firstEventAfterDiscontinuity")
+                initialOffset = FloatArray(3) {event.values[it]}
+                if (initialOffset != null)
+                    Log.d("MainActivity", "onSensorChanged: ${initialOffset!![0]} ${initialOffset!![1]} ${initialOffset!![2]}")
+            }
+
+            sensorsData.value = FloatArray(3) {
+                event.values[it] - (initialOffset?.get(it) ?: 0F)
+            }
+
+            Log.d("MainActivity", "onSensorChanged 0: ${event.values[0]} to ${sensorsData.value[0]}")
+            Log.d("MainActivity", "onSensorChanged 1: ${event.values[1]} to ${sensorsData.value[1]}")
+            Log.d("MainActivity", "onSensorChanged 2: ${event.values[2]} to ${sensorsData.value[2]}")
+
             if (controlMode.value == ControlMode.RPY && fullscreen.value) {
                 cursorOffset.value = Offset(
-                    event.values[1] * 200,
-                    event.values[0] * 200
+                    sensorsData.value[1] * 200,
+                    sensorsData.value[0] * 200
                 )
                 // Sends the RPY values to the drone
                 rpyControlVM.sendRPY(
@@ -423,9 +449,13 @@ class SensorDataListener(
                         -100F,
                         100F
                     ) / 100 * -1,
-                    event.values[2]
+                    sensorsData.value[2] * -1
                 )
             }
         }
+    }
+
+    fun reset() {
+        initialOffset = null
     }
 }

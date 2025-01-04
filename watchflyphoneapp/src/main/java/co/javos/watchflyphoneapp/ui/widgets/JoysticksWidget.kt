@@ -51,14 +51,14 @@ class JoysticksWidget {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                VirtualStick(70.dp, virtualSticks?.left?.x ?: 0, virtualSticks?.left?.y ?: 0, color)
-                VirtualStick(70.dp, virtualSticks?.right?.x ?: 0, virtualSticks?.right?.y ?: 0, color)
+                VirtualStick(70.dp, virtualSticks?.left?.x ?: 0F, virtualSticks?.left?.y ?: 0F, color)
+                VirtualStick(70.dp, virtualSticks?.right?.x ?: 0F, virtualSticks?.right?.y ?: 0F, color)
             }
         }
     }
 
     @Composable
-    fun VirtualStick(size: Dp, x: Int, y: Int, color: Color) {
+    fun VirtualStick(size: Dp, x: Float, y: Float, color: Color) {
 
         val drawableSize = (size.value - 20)/2
         val realX = drawableSize * (x/100.0)

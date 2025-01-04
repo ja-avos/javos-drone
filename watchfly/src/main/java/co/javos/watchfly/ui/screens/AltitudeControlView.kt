@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -27,15 +28,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.Icon
 import co.javos.watchfly.ui.widgets.AltitudeWidget
+import co.javos.watchfly.viewmodels.AltitudeControlViewModel
 
 @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
 @Composable
-fun AltitudeControlView(cursorOffset: Offset = Offset.Zero) {
-    val altitude = remember { mutableFloatStateOf(100F) }
-    val ascending = remember { mutableIntStateOf(0) }
+fun AltitudeControlView(viewModel: AltitudeControlViewModel? = null, cursorOffset: Offset = Offset.Zero) {
 
-    ascending.intValue = -1 * cursorOffset.y.toInt()
-    altitude.floatValue = 100F + ascending.intValue
+    val droneStatus = viewModel?.droneStatus?.collectAsState()?.value
+    val altitude = droneStatus?.altitude ?: 0F
+    val ascending = droneStatus?.verticalSpeed ?: 0F
 
     Box(
         modifier = Modifier
@@ -45,7 +46,7 @@ fun AltitudeControlView(cursorOffset: Offset = Offset.Zero) {
     ) {
         Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
             AltitudeWidget(
-                altitude.floatValue, ascending.intValue.toFloat(),
+                altitude, ascending,
                 modifier = Modifier
                     .weight(1F)
             )
@@ -69,7 +70,7 @@ fun AltitudeControlView(cursorOffset: Offset = Offset.Zero) {
                     Modifier
                         .fillMaxSize()
                         .weight(1F)
-                        .background(color = if (ascending.intValue > 0) Color.Magenta.copy(alpha = 0.1F) else Color.Transparent),
+                        .background(color = if (ascending > 0) Color.Magenta.copy(alpha = 0.1F) else Color.Transparent),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -82,7 +83,7 @@ fun AltitudeControlView(cursorOffset: Offset = Offset.Zero) {
                     Modifier
                         .fillMaxSize()
                         .weight(1F)
-                        .background(color = if (ascending.intValue < 0) Color.Magenta.copy(alpha = 0.1F) else Color.Transparent),
+                        .background(color = if (ascending < 0) Color.Magenta.copy(alpha = 0.1F) else Color.Transparent),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
