@@ -21,7 +21,7 @@ enum class DroneState {
 }
 
 class DroneStatus(
-    var state: DroneState = DroneState.FLYING,
+    var state: DroneState = DroneState.NO_REMOTE,
     var battery: Int = 0,
     var altitude: Float = 0F,
     var location: Location? = null,
@@ -140,8 +140,7 @@ class DroneStatus(
             }
 
             return DroneStatus(
-//                state = state, TODO Remove comment
-                state = DroneState.FLYING,
+                state = state,
                 battery = battery,
                 altitude = altitude,
                 verticalSpeed = verticalSpeed,

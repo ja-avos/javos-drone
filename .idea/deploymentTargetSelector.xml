@@ -18,6 +18,14 @@
       </SelectionState>
       <SelectionState runConfigName="watchfly">
         <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-01-04T18:02:38.429772400Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="Default" identifier="serial=192.168.58.107:34093;connection=a4de4ac0" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
       </SelectionState>
     </selectionStates>
   </component>

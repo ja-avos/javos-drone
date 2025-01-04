@@ -3,7 +3,6 @@ package co.javos.watchflyphoneapp.repository
 import android.app.Activity
 import android.location.Location
 import android.util.Log
-import androidx.compose.ui.text.font.FontVariation
 import co.javos.watchflyphoneapp.models.DroneState
 import co.javos.watchflyphoneapp.models.DroneStatus
 import co.javos.watchflyphoneapp.models.RemoteType
@@ -14,12 +13,13 @@ import dji.common.camera.SettingsDefinitions
 import dji.common.error.DJIError
 import dji.common.error.DJISDKError
 import dji.common.flightcontroller.FlightControllerState
+import dji.common.flightcontroller.simulator.InitializationData
 import dji.common.flightcontroller.virtualstick.FlightControlData
 import dji.common.flightcontroller.virtualstick.FlightCoordinateSystem
 import dji.common.flightcontroller.virtualstick.RollPitchControlMode
 import dji.common.flightcontroller.virtualstick.VerticalControlMode
 import dji.common.flightcontroller.virtualstick.YawControlMode
-import dji.common.healthmanager.WarningLevel
+import dji.common.model.LocationCoordinate2D
 import dji.sdk.airlink.AirLink
 import dji.sdk.base.BaseComponent
 import dji.sdk.base.BaseProduct
@@ -34,7 +34,6 @@ import dji.sdk.sdkmanager.DJISDKInitEvent
 import dji.sdk.sdkmanager.DJISDKManager
 import dji.sdk.sdkmanager.DJISDKManager.SDKManagerCallback
 import dji.thirdparty.afinal.core.AsyncTask
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
@@ -64,11 +63,11 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
     private fun startSDKRegistration() {
         if (isRegistrationInProgress.compareAndSet(false, true)) {
-            AsyncTask.execute(Runnable {
+            AsyncTask.execute {
                 Log.d(TAG, "registering, pls wait...")
                 _droneStatus.value = _droneStatus.value.toState(DroneState.SDK_INITIALIZING)
                 manager.registerApp(activity.applicationContext, this)
-            })
+            }
         }
     }
 
@@ -154,7 +153,7 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
         val gpsSignalStrength = flightState.satelliteCount
 
-        var state = _droneStatus.value.state
+        var state: DroneState
 
         state = if (flightState.isFlying) {
             DroneState.FLYING
@@ -223,6 +222,20 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
                     (newComponent as FlightController).setStateCallback {
                         onStatusUpdate(it)
                     }
+//                    newComponent.simulator.start(
+//                        InitializationData.createInstance(
+//                            LocationCoordinate2D(
+//                                4.0, -72.0
+//                            ),
+//                            50,
+//                            10
+//                        )
+//                    ) {
+//                        Log.d(TAG, "onComponentChange: simulator callback ${it?.description ?: "success"}")
+//                    }
+                    newComponent.setVirtualStickModeEnabled(true) {
+                        Log.d(TAG, "onComponentChange: enabling virtual stick callback ${it?.description ?: "success"}")
+                    }
                     isDroneConnected.value = true
                 } else {
                     isDroneConnected.value = false
@@ -239,7 +252,7 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
             ComponentKey.AIR_LINK -> {
                 if (newComponent != null && newComponent is AirLink) {
-                    (newComponent as AirLink).setUplinkSignalQualityCallback {
+                    newComponent.setUplinkSignalQualityCallback {
                         onAirLinkStatusUpdate(it)
                     }
                 }
@@ -405,8 +418,15 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
         }
     }
 
-    fun registerRemoteSticksListener(remoteController: RemoteController) {
+    private fun registerRemoteSticksListener(remoteController: RemoteController) {
         remoteController.setHardwareStateCallback { state ->
+            // Disable virtual stick mode
+            val controller = (manager.product as Aircraft?)?.flightController
+
+            controller?.setVirtualStickModeEnabled(false) {
+                Log.d(TAG, "registerRemoteSticksListener: virtual stick mode disabled ${it?.description ?: "success"}")
+            }
+
             val maxLimit = 660
             _virtualSticks.value = VirtualSticks(
                 RemoteType.REMOTE_CONTROLLER,
@@ -462,7 +482,12 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
         if (controller == null) {
             Log.d(TAG, "changeRPY: controller is null")
-//            return null
+            return null
+        }
+
+        // Enable virtual stick mode
+        controller?.setVirtualStickModeEnabled(true) {
+            Log.d(TAG, "changeRPY: virtual stick mode enabled ${it?.description ?: "success"}")
         }
 
         val MAX_ROLL_PITCH_ANGLE = 30F
