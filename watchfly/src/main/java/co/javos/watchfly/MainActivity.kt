@@ -189,7 +189,7 @@ fun WatchFlyApp(
         sensorManager?.registerListener(
             listener,
             sensors?.get(0),
-            SensorManager.SENSOR_DELAY_NORMAL
+            SensorManager.SENSOR_DELAY_UI
         )
     } else {
         Log.d("MainActivity", "onSensorChanged: unregistering... $listener")
@@ -421,23 +421,19 @@ class SensorDataListener(
 
             if (initialOffset == null) {
                 Log.d("MainActivity", "onSensorChanged: firstEventAfterDiscontinuity")
-                initialOffset = FloatArray(3) {event.values[it]}
-                if (initialOffset != null)
-                    Log.d("MainActivity", "onSensorChanged: ${initialOffset!![0]} ${initialOffset!![1]} ${initialOffset!![2]}")
+                initialOffset = floatArrayOf(0F, 0F, event.values[2])
             }
 
             sensorsData.value = FloatArray(3) {
                 event.values[it] - (initialOffset?.get(it) ?: 0F)
             }
 
-            Log.d("MainActivity", "onSensorChanged 0: ${event.values[0]} to ${sensorsData.value[0]}")
-            Log.d("MainActivity", "onSensorChanged 1: ${event.values[1]} to ${sensorsData.value[1]}")
-            Log.d("MainActivity", "onSensorChanged 2: ${event.values[2]} to ${sensorsData.value[2]}")
+            sensorsData.value = getRollPitchYaw(sensorsData.value)
 
             if (controlMode.value == ControlMode.RPY && fullscreen.value) {
                 cursorOffset.value = Offset(
-                    sensorsData.value[1] * 200,
-                    sensorsData.value[0] * 200
+                    sensorsData.value[0] * 100,
+                    sensorsData.value[1] * 100
                 )
                 // Sends the RPY values to the drone
                 rpyControlVM.sendRPY(
@@ -453,6 +449,33 @@ class SensorDataListener(
                 )
             }
         }
+    }
+
+    fun getRollPitchYaw(vector: FloatArray): FloatArray {
+        val rotationMatrix = FloatArray(9)
+        val remappedMatrix = FloatArray(9)
+
+        SensorManager.getRotationMatrixFromVector(rotationMatrix, vector)
+        SensorManager.remapCoordinateSystem(
+            rotationMatrix,
+            SensorManager.AXIS_Y,
+            SensorManager.AXIS_MINUS_X,
+            remappedMatrix
+        )
+
+
+        val orientation = FloatArray(3)
+        SensorManager.getOrientation(rotationMatrix, orientation)
+
+        val roll = normalize(Math.toDegrees(orientation[2].toDouble()).toFloat(), 90F)
+        val pitch = normalize(Math.toDegrees(orientation[1].toDouble()).toFloat(), -90F)
+        val yaw = normalize(Math.toDegrees(orientation[0].toDouble()).toFloat(), -180F)
+
+        return floatArrayOf(roll, pitch, yaw)
+    }
+
+    fun normalize(angle: Float, maxAngle: Float): Float {
+        return angle / maxAngle
     }
 
     fun reset() {
