@@ -112,8 +112,12 @@ class WatchChatView {
     @Composable
     fun MessageInput(viewModel: WatchChatViewModel?) {
 
-        val testMessages = arrayOf(
-            "Drone disconnected", "Drone connected", "Drone flying", "Error", "Warning"
+        val testMessages = mapOf(
+            "drone_connected" to "Drone Connected",
+            "drone_disconnected" to "Drone Disconnected",
+            "drone_flying" to "Drone Flying",
+            "motors_on" to "Motors On",
+            "motors_off" to "Motors Off",
         )
 
         Row(modifier = Modifier
@@ -134,15 +138,10 @@ class WatchChatView {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(testMessages.size) { index ->
-                    CommandMessageButtonWidget().CommandMessageButton(text = testMessages[index],
-                        onClick = {
-                            viewModel?.addMessage(
-                                Message(
-                                    content = testMessages[index],
-                                    author = AuthorDevice.PHONE
-                                )
-                            )
-                        })
+                    val message = testMessages.keys.elementAt(index)
+                    CommandMessageButtonWidget().CommandMessageButton(text = testMessages[message]!!, onClick = {
+                        viewModel?.sendTestCommand(message)
+                    })
                 }
             }
         }

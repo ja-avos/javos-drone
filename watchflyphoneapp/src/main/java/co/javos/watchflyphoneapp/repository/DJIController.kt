@@ -334,6 +334,10 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
             Log.d(TAG, "STOP Drone: Stopping flight controller")
 
+            flightController?.setVirtualStickModeEnabled(false) {
+                Log.d(TAG, "STOP Drone: virtual stick mode disabled ${it?.description ?: "success"}")
+            }
+
             flightController?.cancelGoHome { error ->
                 Log.d(TAG, "cancelGoHome: ${error?.description ?: "success"}")
                 flightController.cancelLanding { error2 ->
@@ -446,13 +450,19 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
     // Param velocity must be a number between -1 and 1
     fun changeAltitude(velocity: Float): FlightControlData? {
-        // According to DJI SDK docs, the maximum velocity is (+/-) 4m/s
-        val MAX_VELOCITY = 4F
+        // According to DJI SDK docs, the maximum velocity is (+/-) 4m/s, limiting to 2
+        val MAX_VELOCITY = 2F
         if (velocity > 1 || velocity < -1) {
             Log.d(TAG, "changeAltitude: velocity must be between -1 and 1")
             return null
         }
         val controller = (manager.product as Aircraft?)?.flightController
+
+        // Enable virtual stick mode
+        controller?.setVirtualStickModeEnabled(true) {
+            Log.d(TAG, "changeRPY: virtual stick mode enabled ${it?.description ?: "success"}")
+        }
+
         controller?.verticalControlMode = VerticalControlMode.VELOCITY
         val controlData = FlightControlData(
             0F,
@@ -482,7 +492,7 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
         if (controller == null) {
             Log.d(TAG, "changeRPY: controller is null")
-            return null
+//            return null
         }
 
         // Enable virtual stick mode
@@ -492,15 +502,16 @@ class DJIController(private val manager: DJISDKManager, private val activity: Ac
 
         val MAX_ROLL_PITCH_ANGLE = 30F
         val MAX_YAW_ANGLE = 180F
+        val MAX_YAW_ANGULAR_VELOCITY = 100F
 
-        controller?.yawControlMode = YawControlMode.ANGLE
+        controller?.yawControlMode = YawControlMode.ANGULAR_VELOCITY
         controller?.rollPitchControlMode = RollPitchControlMode.ANGLE
         controller?.rollPitchCoordinateSystem = FlightCoordinateSystem.BODY
 
         val controlData = FlightControlData(
-            pitch * MAX_ROLL_PITCH_ANGLE,
+            pitch * MAX_ROLL_PITCH_ANGLE * -1,
             roll * MAX_ROLL_PITCH_ANGLE,
-            yaw * MAX_YAW_ANGLE,
+            yaw * MAX_YAW_ANGULAR_VELOCITY,
             0F
         )
 

@@ -9,6 +9,8 @@ import co.javos.watchflyphoneapp.models.Alert
 import co.javos.watchflyphoneapp.models.AuthorDevice
 import co.javos.watchflyphoneapp.models.Command
 import co.javos.watchflyphoneapp.models.CommandType
+import co.javos.watchflyphoneapp.models.DroneState
+import co.javos.watchflyphoneapp.models.DroneStatus
 import co.javos.watchflyphoneapp.models.Message
 import co.javos.watchflyphoneapp.repository.DJIController
 import co.javos.watchflyphoneapp.repository.WatchMessageConnection
@@ -88,6 +90,30 @@ class WatchChatViewModel(
 
     fun getMessageCount(): Int {
         return _messages.size
+    }
+
+    fun sendTestCommand(command: String) {
+        when (command) {
+            "drone_connected" -> {
+                val droneStatus = DroneStatus(state = DroneState.MOTORS_OFF)
+                val json = droneStatus.toJsonObject()
+                val message = Message(
+                    content = json.toString()
+                )
+                addMessage(message)
+            }
+            "drone_flying" -> {
+                val droneStatus = DroneStatus(state = DroneState.FLYING)
+                val json = droneStatus.toJsonObject()
+                val message = Message(
+                    content = json.toString()
+                )
+                addMessage(message)
+            }
+            else -> {
+                Log.d("WatchChatViewModel", "Unknown command: $command")
+            }
+        }
     }
 
     private fun processCommand(command: Command) {
